@@ -24,19 +24,19 @@
         </div>
         
         <nav class="flex-1 px-4 py-6 space-y-2">
+            <!-- Módulo Activo -->
             <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md">
-                <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-user-doctor w-5"></i> Gestión de Dentistas
+            </a>
+            <!-- Módulo Pendiente para futuro desarrollo -->
+            <a href="#" onclick="alert('Módulo en construcción')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-calendar-check w-5"></i> Citas Generales
             </a>
         </nav>
 
         <div class="p-4 border-t border-slate-700">
             <div class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300">
-                <div class="w-8 h-8 rounded-full bg-[#26bad4] flex items-center justify-center text-white font-bold">
-                    SA
-                </div>
+                <div class="w-8 h-8 rounded-full bg-[#26bad4] flex items-center justify-center text-white font-bold">SA</div>
                 <div>
                     <p class="font-bold text-white truncate max-w-[140px]">Super Admin</p>
                 </div>
@@ -49,16 +49,13 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 flex flex-col overflow-hidden">
-        
-        <!-- BARRA SUPERIOR -->
         <header class="h-20 bg-white shadow-sm flex items-center justify-between px-8 z-10">
             <h1 class="text-2xl font-bold text-track-navy">Personal Registrado</h1>
-            <button onclick="toggleModal('createUserModal')" class="bg-smile-cyan hover:bg-[#1fa1b8] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
+            <button onclick="abrirModalCrear()" class="bg-smile-cyan hover:bg-[#1fa1b8] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i> Crear Usuario
             </button>
         </header>
 
-        <!-- ÁREA DE TRABAJO -->
         <div class="flex-1 overflow-y-auto p-8">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
@@ -67,12 +64,13 @@
                             <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
                                 <th class="px-6 py-4 font-medium">Nombre / Correo</th>
                                 <th class="px-6 py-4 font-medium">Especialidad</th>
-                                <th class="px-6 py-4 font-medium">Estado</th>
+                                <th class="px-6 py-4 font-medium">Contraseña Asignada</th>
                                 <th class="px-6 py-4 font-medium text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoTabla" class="divide-y divide-slate-100">
-                            <!-- Los dentistas aparecerán aquí -->
+                            <!-- Los dentistas se cargarán aquí automáticamente desde Firebase -->
+                            <tr><td colspan="4" class="text-center py-8 text-slate-400">Cargando datos desde la nube...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -80,18 +78,21 @@
         </div>
     </main>
 
-    <!-- MODAL: CREAR NUEVO USUARIO -->
-    <div id="createUserModal" class="modal hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <!-- MODAL: CREAR / EDITAR USUARIO -->
+    <div id="userModal" class="modal hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-track-navy px-6 py-4 flex justify-between items-center z-10">
-                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <h2 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
                     <i class="fa-solid fa-user-plus text-[#26bad4]"></i> Registrar Nuevo Dentista
                 </h2>
-                <button onclick="toggleModal('createUserModal')" class="text-slate-300 hover:text-white text-2xl leading-none transition-colors">&times;</button>
+                <button onclick="cerrarModal()" class="text-slate-300 hover:text-white text-2xl leading-none transition-colors">&times;</button>
             </div>
             
-            <form id="formNuevoUsuario" onsubmit="registrarUsuario(event)" class="p-6">
-                <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Información y Perfil</h3>
+            <form id="formUsuario" onsubmit="guardarUsuario(event)" class="p-6">
+                <!-- Campo oculto para saber si estamos editando -->
+                <input type="hidden" id="inputIdFirebase">
+                
+                <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Información y Acceso</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
@@ -111,12 +112,16 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1">Correo (Usuario)</label>
                         <input type="email" id="inputCorreo" required placeholder="correo@smiletrack.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña de Acceso</label>
+                        <input type="text" id="inputPassword" required placeholder="Asigna una contraseña" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="toggleModal('createUserModal')" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                    <button type="submit" class="px-5 py-2.5 bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Registrar y Guardar
+                    <button type="button" onclick="cerrarModal()" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" id="btnSubmit" class="px-5 py-2.5 bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Guardar Usuario
                     </button>
                 </div>
             </form>
@@ -126,36 +131,90 @@
     <!-- CONEXIÓN A FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Tu configuración exacta
+        // === PEGA TU CONFIGURACIÓN EXACTA AQUÍ ===
         const firebaseConfig = {
-            apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
-            authDomain: "smiletrack-53116.firebaseapp.com",
-            projectId: "smiletrack-53116",
-            storageBucket: "smiletrack-53116.firebasestorage.app",
-            messagingSenderId: "978800884207",
-            appId: "1:978800884207:web:378a2291fac086e7745e1a",
-            measurementId: "G-XES7XSYE2V"
+            // apiKey: "TU_API_KEY",
+            // etc...
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.toggleModal = function(modalID) {
-            const modal = document.getElementById(modalID);
-            modal.classList.toggle('hidden');
-            if (modal.classList.contains('hidden')) {
-                document.getElementById('formNuevoUsuario').reset();
-            }
+        // --- LÓGICA DE INTERFAZ ---
+        window.abrirModalCrear = function() {
+            document.getElementById('formUsuario').reset();
+            document.getElementById('inputIdFirebase').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-[#26bad4]"></i> Registrar Nuevo Dentista';
+            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-check"></i> Registrar Usuario';
+            document.getElementById('userModal').classList.remove('hidden');
         };
 
+        window.cerrarModal = function() {
+            document.getElementById('userModal').classList.add('hidden');
+        };
+
+        // --- LECTURA DE DATOS (CARGAR AL INICIAR) ---
+        async function cargarTabla() {
+            const tabla = document.getElementById('cuerpoTabla');
+            try {
+                const querySnapshot = await getDocs(collection(db, "dentistas"));
+                tabla.innerHTML = ''; // Limpiar mensaje de carga
+                
+                if(querySnapshot.empty) {
+                    tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">No hay dentistas registrados aún.</td></tr>';
+                    return;
+                }
+
+                querySnapshot.forEach((documento) => {
+                    const datos = documento.data();
+                    const id = documento.id;
+                    
+                    const fila = document.createElement('tr');
+                    fila.className = "hover:bg-slate-50 transition-colors";
+                    
+                    // Nota cómo pasamos los datos exactos a la función abrirModalEditar en el botón de lápiz
+                    fila.innerHTML = `
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-800">${datos.nombre}</p>
+                            <p class="text-sm text-slate-500">${datos.correo}</p>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">${datos.especialidad}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500 font-mono">${datos.password || 'No asignada'}</td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="abrirModalEditar('${id}', '${datos.nombre}', '${datos.correo}', '${datos.especialidad}', '${datos.password}')" class="text-slate-400 hover:text-smile-cyan transition-colors" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarFila(this, '${id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Eliminar"><i class="fa-solid fa-ban"></i></button>
+                        </td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+            } catch (error) {
+                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos. Revisa la consola.</td></tr>';
+            }
+        }
+
+        // Llamar a la función al cargar la página
+        cargarTabla();
+
+        // --- EDITAR USUARIO ---
+        window.abrirModalEditar = function(id, nombre, correo, especialidad, password) {
+            document.getElementById('inputIdFirebase').value = id;
+            document.getElementById('inputNombre').value = nombre;
+            document.getElementById('inputCorreo').value = correo;
+            document.getElementById('inputEspecialidad').value = especialidad;
+            document.getElementById('inputPassword').value = password !== 'undefined' ? password : '';
+            
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen text-[#26bad4]"></i> Editar Dentista';
+            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
+            document.getElementById('userModal').classList.remove('hidden');
+        };
+
+        // --- ELIMINAR USUARIO ---
         window.eliminarFila = async function(boton, idFirebase) {
             if(confirm("¿Estás seguro de que deseas eliminar a este usuario de la base de datos?")) {
                 try {
-                    if (idFirebase) {
-                        await deleteDoc(doc(db, "dentistas", idFirebase));
-                    }
+                    await deleteDoc(doc(db, "dentistas", idFirebase));
                     boton.closest('tr').remove();
                 } catch (error) {
                     alert("Error al eliminar: " + error.message);
@@ -163,50 +222,42 @@
             }
         };
 
-        window.registrarUsuario = async function(event) {
+        // --- GUARDAR O ACTUALIZAR USUARIO ---
+        window.guardarUsuario = async function(event) {
             event.preventDefault();
 
-            const btnSubmit = event.target.querySelector('button[type="submit"]');
+            const btnSubmit = document.getElementById('btnSubmit');
             const textoOriginal = btnSubmit.innerHTML;
             btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btnSubmit.disabled = true;
 
-            const nombre = document.getElementById('inputNombre').value;
-            const correo = document.getElementById('inputCorreo').value;
-            const especialidad = document.getElementById('inputEspecialidad').value;
+            const idFirebase = document.getElementById('inputIdFirebase').value;
+            const datos = {
+                nombre: document.getElementById('inputNombre').value,
+                correo: document.getElementById('inputCorreo').value,
+                especialidad: document.getElementById('inputEspecialidad').value,
+                password: document.getElementById('inputPassword').value
+            };
 
             try {
-                const docRef = await addDoc(collection(db, "dentistas"), {
-                    nombre: nombre,
-                    correo: correo,
-                    especialidad: especialidad,
-                    estado: "Activo",
-                    fechaRegistro: new Date()
-                });
+                if (idFirebase) {
+                    // Si hay un ID, significa que estamos EDITANDO
+                    await updateDoc(doc(db, "dentistas", idFirebase), datos);
+                    alert("¡Datos actualizados exitosamente!");
+                } else {
+                    // Si no hay ID, estamos CREANDO uno nuevo
+                    datos.estado = "Activo";
+                    datos.fechaRegistro = new Date();
+                    await addDoc(collection(db, "dentistas"), datos);
+                    alert("¡Dentista registrado exitosamente!");
+                }
 
-                const nuevaFila = document.createElement('tr');
-                nuevaFila.className = "hover:bg-slate-50 transition-colors";
-                nuevaFila.innerHTML = `
-                    <td class="px-6 py-4">
-                        <p class="font-bold text-slate-800">${nombre}</p>
-                        <p class="text-sm text-slate-500">${correo}</p>
-                    </td>
-                    <td class="px-6 py-4 text-slate-600">${especialidad}</td>
-                    <td class="px-6 py-4">
-                        <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">Activo</span>
-                    </td>
-                    <td class="px-6 py-4 text-right space-x-2">
-                        <button class="text-slate-400 hover:text-smile-cyan transition-colors" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="eliminarFila(this, '${docRef.id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Eliminar"><i class="fa-solid fa-ban"></i></button>
-                    </td>
-                `;
-                
-                document.getElementById('cuerpoTabla').appendChild(nuevaFila);
-                window.toggleModal('createUserModal');
+                cerrarModal();
                 btnSubmit.innerHTML = textoOriginal;
                 btnSubmit.disabled = false;
-
-                alert("¡Dentista registrado exitosamente!");
+                
+                // Recargamos la tabla para ver los cambios recientes
+                cargarTabla();
 
             } catch (error) {
                 alert("Error de conexión: " + error.message);
