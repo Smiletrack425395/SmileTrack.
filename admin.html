@@ -70,7 +70,7 @@
                         </thead>
                         <tbody id="cuerpoTabla" class="divide-y divide-slate-100">
                             <!-- Los dentistas se cargarán aquí automáticamente desde Firebase -->
-                            <tr><td colspan="4" class="text-center py-8 text-slate-400">Cargando datos desde la nube...</td></tr>
+                            <tr><td colspan="4" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando datos desde la nube...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -133,10 +133,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // === PEGA TU CONFIGURACIÓN EXACTA AQUÍ ===
+        // === TU CONFIGURACIÓN EXACTA DE FIREBASE ===
         const firebaseConfig = {
-            // apiKey: "TU_API_KEY",
-            // etc...
+            apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
+            authDomain: "smiletrack-53116.firebaseapp.com",
+            projectId: "smiletrack-53116",
+            storageBucket: "smiletrack-53116.firebasestorage.app",
+            messagingSenderId: "978800884207",
+            appId: "1:978800884207:web:378a2291fac086e7745e1a",
+            measurementId: "G-XES7XSYE2V"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -174,7 +179,6 @@
                     const fila = document.createElement('tr');
                     fila.className = "hover:bg-slate-50 transition-colors";
                     
-                    // Nota cómo pasamos los datos exactos a la función abrirModalEditar en el botón de lápiz
                     fila.innerHTML = `
                         <td class="px-6 py-4">
                             <p class="font-bold text-slate-800">${datos.nombre}</p>
@@ -190,7 +194,8 @@
                     tabla.appendChild(fila);
                 });
             } catch (error) {
-                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos. Revisa la consola.</td></tr>';
+                console.error(error);
+                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos de Firebase. Revisa los permisos o tu conexión.</td></tr>';
             }
         }
 
@@ -241,22 +246,20 @@
 
             try {
                 if (idFirebase) {
-                    // Si hay un ID, significa que estamos EDITANDO
+                    // MODO EDICIÓN
                     await updateDoc(doc(db, "dentistas", idFirebase), datos);
-                    alert("¡Datos actualizados exitosamente!");
                 } else {
-                    // Si no hay ID, estamos CREANDO uno nuevo
+                    // MODO CREACIÓN
                     datos.estado = "Activo";
                     datos.fechaRegistro = new Date();
                     await addDoc(collection(db, "dentistas"), datos);
-                    alert("¡Dentista registrado exitosamente!");
                 }
 
                 cerrarModal();
                 btnSubmit.innerHTML = textoOriginal;
                 btnSubmit.disabled = false;
                 
-                // Recargamos la tabla para ver los cambios recientes
+                // Recargamos la tabla para ver el usuario nuevo/editado
                 cargarTabla();
 
             } catch (error) {
