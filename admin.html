@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmileTrack | Panel de Administración</title>
+    <title>SmileTrack | Mi Panel de Especialista</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .modal { transition: opacity 0.3s ease; }
         .bg-smile-cyan { background-color: #26bad4; }
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
@@ -25,21 +24,21 @@
         
         <nav class="flex-1 px-4 py-6 space-y-2">
             <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md">
-                <i class="fa-solid fa-user-doctor w-5"></i> Gestión de Dentistas
+                <i class="fa-solid fa-user-gear w-5"></i> Mi Perfil y Servicios
             </a>
-            <a href="#" onclick="alert('Apartado de Solicitudes de Citas en desarrollo')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+            <a href="#" onclick="alert('Apartado de Solicitudes de Citas')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-clock-rotate-left w-5"></i> Solicitudes de Citas
             </a>
-            <a href="#" onclick="alert('Módulo de Citas en construcción')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+            <a href="#" onclick="alert('Módulo de Citas')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-calendar-check w-5"></i> Citas
             </a>
         </nav>
 
         <div class="p-4 border-t border-slate-700">
             <div class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300">
-                <div class="w-8 h-8 rounded-full bg-[#26bad4] flex items-center justify-center text-white font-bold">SA</div>
+                <div class="w-8 h-8 rounded-full bg-[#26bad4] flex items-center justify-center text-white font-bold" id="sidebarAvatar">DR</div>
                 <div>
-                    <p class="font-bold text-white truncate max-w-[140px]">Super Admin</p>
+                    <p class="font-bold text-white truncate max-w-[140px]" id="sidebarNombre">Especialista</p>
                 </div>
             </div>
             <button onclick="window.location.href='index.html'" class="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors text-sm">
@@ -48,105 +47,85 @@
         </div>
     </aside>
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-20 bg-white shadow-sm flex items-center justify-between px-8 z-10">
-            <h1 class="text-2xl font-bold text-track-navy">Personal Registrado</h1>
-            <button onclick="abrirModalCrear()" class="bg-smile-cyan hover:bg-[#1fa1b8] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-plus"></i> Crear Usuario
-            </button>
+    <!-- CONTENIDO PRINCIPAL: EDITAR PERFIL PROPIO -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <header class="h-20 bg-white shadow-sm flex items-center justify-between px-8 z-10 sticky top-0">
+            <h1 class="text-2xl font-bold text-track-navy">Configuración de mi Perfil</h1>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-8">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                                <th class="px-6 py-4 font-medium">Nombre / Correo</th>
-                                <th class="px-6 py-4 font-medium">Especialidad</th>
-                                <th class="px-6 py-4 font-medium">Contraseña Asignada</th>
-                                <th class="px-6 py-4 font-medium text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpoTabla" class="divide-y divide-slate-100">
-                            <tr><td colspan="4" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando datos desde la nube...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="p-8 max-w-4xl mx-auto w-full">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                
+                <form id="formMiPerfil" onsubmit="guardarMiPerfil(event)">
+                    <!-- ID oculto del registro -->
+                    <input type="hidden" id="inputIdFirebase">
+
+                    <div class="flex items-center gap-6 mb-8 pb-6 border-b border-slate-100">
+                        <div class="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center relative shadow-inner">
+                            <img id="previewFoto" src="" alt="Foto perfil" class="w-full h-full object-cover hidden">
+                            <i id="previewIcon" class="fa-solid fa-user-doctor text-4xl text-slate-300"></i>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Fotografía del Doctor (Desde tu equipo)</label>
+                            <input type="file" id="inputArchivoFoto" accept="image/*" onchange="convertirImagen(event)" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-smile-cyan hover:file:bg-cyan-100 cursor-pointer">
+                            <input type="hidden" id="inputFotoBase64">
+                            <p class="text-xs text-slate-400 mt-1">Sube una foto clara en formato JPG o PNG.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider mb-4">Información Personal y Acceso</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
+                            <input type="text" id="inputNombre" required placeholder="Ej. Yatziri Leal" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Especialidad</label>
+                            <select id="inputEspecialidad" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
+                                <option value="" disabled selected>Selecciona una especialidad...</option>
+                                <option value="Odontología General">Odontología General</option>
+                                <option value="Ortodoncia">Ortodoncia</option>
+                                <option value="Endodoncia">Endodoncia</option>
+                                <option value="Cirugía Maxilofacial">Cirugía Maxilofacial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
+                            <input type="email" id="inputCorreo" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-slate-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Mi Contraseña</label>
+                            <input type="text" id="inputPassword" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
+                        </div>
+                    </div>
+
+                    <!-- SERVICIOS Y PRECIOS -->
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                        <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider">Mis Servicios y Costos</h3>
+                        <button type="button" onclick="agregarCampoServicio()" class="bg-cyan-50 text-smile-cyan hover:bg-cyan-100 px-3 py-1 rounded-md text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-plus"></i> Añadir Servicio
+                        </button>
+                    </div>
+                    
+                    <div id="contenedorServiciosDinamicos" class="space-y-3 mb-8">
+                        <!-- Servicios inyectados con JS -->
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-slate-100">
+                        <button type="submit" id="btnSubmit" class="px-6 py-3 bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Guardar Cambios en mi Perfil
+                        </button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </main>
 
-    <!-- MODAL: CREAR / EDITAR USUARIO -->
-    <div id="userModal" class="modal hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-track-navy px-6 py-4 flex justify-between items-center z-10">
-                <h2 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus text-[#26bad4]"></i> Registrar Nuevo Dentista
-                </h2>
-                <button onclick="cerrarModal()" class="text-slate-300 hover:text-white text-2xl leading-none transition-colors">&times;</button>
-            </div>
-            
-            <form id="formUsuario" onsubmit="guardarUsuario(event)" class="p-6">
-                <input type="hidden" id="inputIdFirebase">
-                
-                <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Información y Acceso</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo (Ej. Yatziri Leal)</label>
-                        <input type="text" id="inputNombre" required placeholder="Nombre sin prefijo" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Especialidad</label>
-                        <select id="inputEspecialidad" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
-                            <option value="" disabled selected>Selecciona una especialidad...</option>
-                            <option value="Odontología General">Odontología General</option>
-                            <option value="Ortodoncia">Ortodoncia</option>
-                            <option value="Endodoncia">Endodoncia</option>
-                            <option value="Cirugía Maxilofacial">Cirugía Maxilofacial</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Correo (Usuario)</label>
-                        <input type="email" id="inputCorreo" required placeholder="correo@smiletrack.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña de Acceso</label>
-                        <input type="text" id="inputPassword" required placeholder="Asigna una contraseña" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Fotografía de Perfil (URL de imagen o link)</label>
-                        <input type="text" id="inputFoto" placeholder="https://ejemplo.com/foto.jpg (o deja en blanco)" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
-                    </div>
-                </div>
-
-                <!-- SECCIÓN DE SERVICIOS Y PRECIOS DINÁMICOS -->
-                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                    <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider">Servicios y Costos Ofrecidos</h3>
-                    <button type="button" onclick="agregarCampoServicio()" class="bg-cyan-50 text-smile-cyan hover:bg-cyan-100 px-3 py-1 rounded-md text-xs font-bold transition-colors">
-                        <i class="fa-solid fa-plus"></i> Añadir Servicio
-                    </button>
-                </div>
-                
-                <div id="contenedorServiciosDinamicos" class="space-y-3 mb-6">
-                    <!-- Los campos de servicios se cargarán aquí -->
-                </div>
-
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="cerrarModal()" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                    <button type="submit" id="btnSubmit" class="px-5 py-2.5 bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Guardar Usuario
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- CONEXIÓN A FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
@@ -161,163 +140,113 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- GESTIÓN DE CAMPOS DINÁMICOS DE SERVICIOS ---
+        // Convertir imagen local a Base64 para guardarla directamente en Firestore
+        window.convertirImagen = function(event) {
+            const archivo = event.target.files[0];
+            if (archivo) {
+                const lector = new FileReader();
+                lector.onload = function(e) {
+                    const base64String = e.target.result;
+                    document.getElementById('inputFotoBase64').value = base64String;
+                    document.getElementById('previewFoto').src = base64String;
+                    document.getElementById('previewFoto').classList.remove('hidden');
+                    document.getElementById('previewIcon').classList.add('hidden');
+                };
+                lector.readAsDataURL(archivo);
+            }
+        };
+
         window.agregarCampoServicio = function(nombre = '', precio = '') {
             const contenedor = document.getElementById('contenedorServiciosDinamicos');
             const div = document.createElement('div');
             div.className = "flex gap-3 items-center item-servicio";
             div.innerHTML = `
-                <input type="text" placeholder="Nombre del procedimiento" value="${nombre}" class="input-nombre-serv flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
+                <input type="text" placeholder="Nombre del procedimiento (Ej. Limpieza)" value="${nombre}" class="input-nombre-serv flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
                 <input type="text" placeholder="Precio (Ej. $850)" value="${precio}" class="input-precio-serv w-32 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
                 <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
             `;
             contenedor.appendChild(div);
         };
 
-        window.abrirModalCrear = function() {
-            document.getElementById('formUsuario').reset();
-            document.getElementById('inputIdFirebase').value = '';
-            document.getElementById('contenedorServiciosDinamicos').innerHTML = '';
-            // Agregar un servicio por defecto
-            agregarCampoServicio("Limpieza Dental", "$800");
-            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-[#26bad4]"></i> Registrar Nuevo Dentista';
-            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-check"></i> Registrar Usuario';
-            document.getElementById('userModal').classList.remove('hidden');
-        };
-
-        window.cerrarModal = function() {
-            document.getElementById('userModal').classList.add('hidden');
-        };
-
-        // --- CARGAR TABLA ---
-        async function cargarTabla() {
-            const tabla = document.getElementById('cuerpoTabla');
+        // Cargar automáticamente el primer perfil disponible para editarlo directamente
+        async function cargarMiPerfil() {
             try {
                 const querySnapshot = await getDocs(collection(db, "dentistas"));
-                tabla.innerHTML = ''; 
-                
-                if(querySnapshot.empty) {
-                    tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">No hay dentistas registrados aún.</td></tr>';
-                    return;
-                }
+                if (!querySnapshot.empty) {
+                    // Tomamos el primer registro como el usuario actual de prueba
+                    const docPerfil = querySnapshot.docs[0];
+                    const datos = docPerfil.data();
+                    const id = docPerfil.id;
 
-                querySnapshot.forEach((documento) => {
-                    const datos = documento.data();
-                    const id = documento.id;
+                    document.getElementById('inputIdFirebase').value = id;
+                    document.getElementById('inputNombre').value = (datos.nombre || '').replace(/^Dr\.\s*|Dra\.\s*/i, '');
+                    document.getElementById('inputEspecialidad').value = datos.especialidad || '';
+                    document.getElementById('inputCorreo').value = datos.correo || '';
+                    document.getElementById('inputPassword').value = datos.password || '';
                     
-                    const fila = document.createElement('tr');
-                    fila.className = "hover:bg-slate-50 transition-colors";
-                    
-                    fila.innerHTML = `
-                        <td class="px-6 py-4">
-                            <p class="font-bold text-slate-800">${datos.nombre}</p>
-                            <p class="text-sm text-slate-500">${datos.correo}</p>
-                        </td>
-                        <td class="px-6 py-4 text-slate-600">${datos.especialidad}</td>
-                        <td class="px-6 py-4 text-sm text-slate-500 font-mono">${datos.password || 'No asignada'}</td>
-                        <td class="px-6 py-4 text-right space-x-2">
-                            <button onclick='abrirModalEditar("${id}", ${JSON.stringify(datos.nombre)}, "${datos.correo}", "${datos.especialidad}", "${datos.password || ''}", "${datos.foto || ''}", ${JSON.stringify(datos.servicios || [])})' class="text-slate-400 hover:text-smile-cyan transition-colors" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="eliminarFila(this, '${id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Eliminar"><i class="fa-solid fa-ban"></i></button>
-                        </td>
-                    `;
-                    tabla.appendChild(fila);
-                });
+                    if (datos.foto) {
+                        document.getElementById('inputFotoBase64').value = datos.foto;
+                        document.getElementById('previewFoto').src = datos.foto;
+                        document.getElementById('previewFoto').classList.remove('hidden');
+                        document.getElementById('previewIcon').classList.add('hidden');
+                    }
+
+                    document.getElementById('sidebarNombre').innerText = datos.nombre || 'Especialista';
+                    document.getElementById('sidebarAvatar').innerText = (datos.nombre || 'DR').substring(0, 2).toUpperCase();
+
+                    const contenedorServicios = document.getElementById('contenedorServiciosDinamicos');
+                    contenedorServicios.innerHTML = '';
+                    if (datos.servicios && datos.servicios.length > 0) {
+                        datos.servicios.forEach(s => agregarCampoServicio(s.nombre, s.precio));
+                    } else {
+                        agregarCampoServicio();
+                    }
+                }
             } catch (error) {
-                console.error(error);
-                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos.</td></tr>';
+                console.error("Error al cargar perfil:", error);
             }
         }
 
-        cargarTabla();
+        cargarMiPerfil();
 
-        // --- EDITAR USUARIO ---
-        window.abrirModalEditar = function(id, nombre, correo, especialidad, password, foto, servicios) {
-            document.getElementById('inputIdFirebase').value = id;
-            document.getElementById('inputNombre').value = nombre.replace(/^Dr\.\s*|Dra\.\s*/i, ''); // Limpiar prefijo para editar limpio
-            document.getElementById('inputCorreo').value = correo;
-            document.getElementById('inputEspecialidad').value = especialidad;
-            document.getElementById('inputPassword').value = password !== 'undefined' ? password : '';
-            document.getElementById('inputFoto').value = foto !== 'undefined' ? foto : '';
-            
-            // Cargar servicios
-            const contenedorServicios = document.getElementById('contenedorServiciosDinamicos');
-            contenedorServicios.innerHTML = '';
-            if (servicios && servicios.length > 0) {
-                servicios.forEach(s => agregarCampoServicio(s.nombre, s.precio));
-            } else {
-                agregarCampoServicio();
-            }
-            
-            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen text-[#26bad4]"></i> Editar Dentista';
-            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
-            document.getElementById('userModal').classList.remove('hidden');
-        };
-
-        window.eliminarFila = async function(boton, idFirebase) {
-            if(confirm("¿Estás seguro de que deseas eliminar a este usuario de la base de datos?")) {
-                try {
-                    await deleteDoc(doc(db, "dentistas", idFirebase));
-                    boton.closest('tr').remove();
-                } catch (error) {
-                    alert("Error al eliminar: " + error.message);
-                }
-            }
-        };
-
-        // --- GUARDAR O ACTUALIZAR ---
-        window.guardarUsuario = async function(event) {
+        // Guardar cambios del perfil propio
+        window.guardarMiPerfil = async function(event) {
             event.preventDefault();
-
             const btnSubmit = document.getElementById('btnSubmit');
-            const textoOriginal = btnSubmit.innerHTML;
-            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando cambios...';
             btnSubmit.disabled = true;
 
-            // Asegurar formato de nombre con "Dr. / Dra."
             let nombreIngresado = document.getElementById('inputNombre').value.trim();
             if (!nombreIngresado.toLowerCase().startsWith('dr.') && !nombreIngresado.toLowerCase().startsWith('dra.')) {
                 nombreIngresado = "Dr. " + nombreIngresado;
             }
 
-            // Recopilar servicios dinámicos
             const serviciosArray = [];
             document.querySelectorAll('.item-servicio').forEach(item => {
-                const nombreServicio = item.querySelector('.input-nombre-serv').value;
-                const precioServicio = item.querySelector('.input-precio-serv').value;
-                if (nombreServicio && precioServicio) {
-                    serviciosArray.push({ nombre: nombreServicio, precio: precioServicio });
+                const nombreServ = item.querySelector('.input-nombre-serv').value;
+                const precioServ = item.querySelector('.input-precio-serv').value;
+                if (nombreServ && precioServ) {
+                    serviciosArray.push({ nombre: nombreServ, precio: precioServ });
                 }
             });
 
             const idFirebase = document.getElementById('inputIdFirebase').value;
-            const datos = {
+            const datosActualizados = {
                 nombre: nombreIngresado,
-                correo: document.getElementById('inputCorreo').value,
                 especialidad: document.getElementById('inputEspecialidad').value,
+                correo: document.getElementById('inputCorreo').value,
                 password: document.getElementById('inputPassword').value,
-                foto: document.getElementById('inputFoto').value,
+                foto: document.getElementById('inputFotoBase64').value,
                 servicios: serviciosArray
             };
 
             try {
-                if (idFirebase) {
-                    await updateDoc(doc(db, "dentistas", idFirebase), datos);
-                    alert("¡Datos actualizados exitosamente!");
-                } else {
-                    datos.estado = "Activo";
-                    datos.fechaRegistro = new Date();
-                    await addDoc(collection(db, "dentistas"), datos);
-                    alert("¡Dentista registrado exitosamente!");
-                }
-
-                cerrarModal();
-                btnSubmit.innerHTML = textoOriginal;
-                btnSubmit.disabled = false;
-                cargarTabla();
-
+                await updateDoc(doc(db, "dentistas", idFirebase), datosActualizados);
+                alert("¡Tus cambios se han guardado correctamente!");
+                location.reload();
             } catch (error) {
-                alert("Error de conexión: " + error.message);
-                btnSubmit.innerHTML = textoOriginal;
+                alert("Error al guardar: " + error.message);
+                btnSubmit.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios en mi Perfil';
                 btnSubmit.disabled = false;
             }
         };
