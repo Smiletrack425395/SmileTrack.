@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmileTrack | Mi Panel de Especialista</title>
+    <title>SmileTrack | Panel de Especialista</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -23,13 +23,13 @@
         </div>
         
         <nav class="flex-1 px-4 py-6 space-y-2">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md">
+            <a href="#" onclick="cambiarVista('perfil')" id="nav-perfil" class="flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md">
                 <i class="fa-solid fa-user-gear w-5"></i> Mi Perfil y Servicios
             </a>
-            <a href="#" onclick="alert('Apartado de Solicitudes de Citas')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+            <a href="#" onclick="cambiarVista('solicitudes')" id="nav-solicitudes" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-clock-rotate-left w-5"></i> Solicitudes de Citas
             </a>
-            <a href="#" onclick="alert('Módulo de Citas')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+            <a href="#" onclick="cambiarVista('citas')" id="nav-citas" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-calendar-check w-5"></i> Citas
             </a>
         </nav>
@@ -47,17 +47,17 @@
         </div>
     </aside>
 
-    <!-- CONTENIDO PRINCIPAL: EDITAR PERFIL PROPIO -->
+    <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 flex flex-col overflow-y-auto">
         <header class="h-20 bg-white shadow-sm flex items-center justify-between px-8 z-10 sticky top-0">
-            <h1 class="text-2xl font-bold text-track-navy">Configuración de mi Perfil</h1>
+            <h1 id="tituloSeccion" class="text-2xl font-bold text-track-navy">Configuración de mi Perfil</h1>
         </header>
 
-        <div class="p-8 max-w-4xl mx-auto w-full">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-                
+        <div class="p-8 max-w-6xl mx-auto w-full">
+            
+            <!-- VISTA 1: MI PERFIL -->
+            <div id="vista-perfil" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
                 <form id="formMiPerfil" onsubmit="guardarMiPerfil(event)">
-                    <!-- ID oculto del registro -->
                     <input type="hidden" id="inputIdFirebase">
 
                     <div class="flex items-center gap-6 mb-8 pb-6 border-b border-slate-100">
@@ -69,7 +69,7 @@
                             <label class="block text-sm font-bold text-slate-700 mb-1">Fotografía del Doctor (Desde tu equipo)</label>
                             <input type="file" id="inputArchivoFoto" accept="image/*" onchange="comprimirYConvertirImagen(event)" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-smile-cyan hover:file:bg-cyan-100 cursor-pointer">
                             <input type="hidden" id="inputFotoBase64">
-                            <p class="text-xs text-slate-400 mt-1">Se optimizará automáticamente para ajustarse al sistema.</p>
+                            <p class="text-xs text-slate-400 mt-1">Se optimizará automáticamente.</p>
                         </div>
                     </div>
 
@@ -99,7 +99,6 @@
                         </div>
                     </div>
 
-                    <!-- SERVICIOS Y PRECIOS -->
                     <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                         <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider">Mis Servicios y Costos</h3>
                         <button type="button" onclick="agregarCampoServicio()" class="bg-cyan-50 text-smile-cyan hover:bg-cyan-100 px-3 py-1 rounded-md text-xs font-bold transition-colors">
@@ -107,9 +106,7 @@
                         </button>
                     </div>
                     
-                    <div id="contenedorServiciosDinamicos" class="space-y-3 mb-8">
-                        <!-- Servicios inyectados con JS -->
-                    </div>
+                    <div id="contenedorServiciosDinamicos" class="space-y-3 mb-8"></div>
 
                     <div class="flex justify-end pt-4 border-t border-slate-100">
                         <button type="submit" id="btnSubmit" class="px-6 py-3 bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
@@ -117,15 +114,76 @@
                         </button>
                     </div>
                 </form>
-
             </div>
+
+            <!-- VISTA 2: SOLICITUDES DE CITAS -->
+            <div id="vista-solicitudes" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 hidden">
+                <h3 class="text-lg font-bold text-track-navy mb-4">Solicitudes Pendientes de Pacientes</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                                <th class="px-4 py-3 font-medium">Paciente</th>
+                                <th class="px-4 py-3 font-medium">Contacto (WhatsApp / Correo)</th>
+                                <th class="px-4 py-3 font-medium">Servicio Solicitado</th>
+                                <th class="px-4 py-3 font-medium text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSolicitudes" class="divide-y divide-slate-100">
+                            <tr><td colspan="4" class="text-center py-6 text-slate-400">Cargando solicitudes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VISTA 3: CITAS PROGRAMADAS -->
+            <div id="vista-citas" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 hidden">
+                <h3 class="text-lg font-bold text-track-navy mb-4">Agenda de Citas Confirmadas</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                                <th class="px-4 py-3 font-medium">Fecha y Hora</th>
+                                <th class="px-4 py-3 font-medium">Paciente</th>
+                                <th class="px-4 py-3 font-medium">WhatsApp</th>
+                                <th class="px-4 py-3 font-medium">Procedimiento</th>
+                                <th class="px-4 py-3 font-medium text-right">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCitasConfirmadas" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="text-center py-6 text-slate-400">Cargando citas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
-    <!-- CONEXIÓN A FIREBASE -->
+    <!-- MODAL PARA ASIGNAR FECHA A SOLICITUD -->
+    <div id="modalAprobar" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold text-track-navy mb-4">Asignar Fecha y Hora de Cita</h3>
+            <form id="formAprobarCita" onsubmit="confirmarAprobacionCita(event)">
+                <input type="hidden" id="solicitudIdHidden">
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Fecha y Hora asignada</label>
+                        <input type="datetime-local" id="inputFechaHora" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('modalAprobar').classList.add('hidden')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-smile-cyan text-white font-bold rounded-lg shadow-md hover:bg-[#1fa1b8]">Aprobar y Agendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
@@ -140,43 +198,147 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Compresor automático de imágenes para evitar exceder el límite de Firestore
+        let solicitusSeleccionada = null;
+        let nombreDentistaActual = "Especialista";
+
+        // Cambio de pestañas en el menú lateral
+        window.cambiarVista = function(vista) {
+            document.getElementById('vista-perfil').classList.add('hidden');
+            document.getElementById('vista-solicitudes').classList.add('hidden');
+            document.getElementById('vista-citas').classList.add('hidden');
+            
+            document.getElementById('nav-perfil').classList.remove('bg-[#26bad4]', 'text-white');
+            document.getElementById('nav-solicitudes').classList.remove('bg-[#26bad4]', 'text-white');
+            document.getElementById('nav-citas').classList.remove('bg-[#26bad4]', 'text-white');
+            
+            document.getElementById('nav-perfil').classList.add('text-slate-300');
+            document.getElementById('nav-solicitudes').classList.add('text-slate-300');
+            document.getElementById('nav-citas').classList.add('text-slate-300');
+
+            if(vista === 'perfil') {
+                document.getElementById('vista-perfil').classList.remove('hidden');
+                document.getElementById('nav-perfil').classList.add('bg-[#26bad4]', 'text-white');
+                document.getElementById('tituloSeccion').innerText = "Configuración de mi Perfil";
+            } else if(vista === 'solicitudes') {
+                document.getElementById('vista-solicitudes').classList.remove('hidden');
+                document.getElementById('nav-solicitudes').classList.add('bg-[#26bad4]', 'text-white');
+                document.getElementById('tituloSeccion').innerText = "Solicitudes de Citas";
+                cargarSolicitudes();
+            } else if(vista === 'citas') {
+                document.getElementById('vista-citas').classList.remove('hidden');
+                document.getElementById('nav-citas').classList.add('bg-[#26bad4]', 'text-white');
+                document.getElementById('tituloSeccion').innerText = "Agenda de Citas";
+                cargarCitasConfirmadas();
+            }
+        };
+
+        // Cargar Solicitudes desde Firebase
+        async function cargarSolicitudes() {
+            const tabla = document.getElementById('tablaSolicitudes');
+            try {
+                const querySnapshot = await getDocs(collection(db, "solicitudes"));
+                tabla.innerHTML = '';
+                if(querySnapshot.empty) {
+                    tabla.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">No hay solicitudes pendientes.</td></tr>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const id = docSnap.id;
+                    const fila = document.createElement('tr');
+                    fila.className = "hover:bg-slate-50";
+                    fila.innerHTML = `
+                        <td class="px-4 py-3 font-bold text-slate-800">${data.nombrePaciente}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">WhatsApp: ${data.whatsapp} <br>${data.correo ? 'Correo: '+data.correo : ''}</td>
+                        <td class="px-4 py-3 text-sm font-semibold text-smile-cyan">${data.servicio}</td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="abrirModalAprobar('${id}', '${data.nombrePaciente}', '${data.whatsapp}', '${data.servicio}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Aceptar y Asignar Fecha</button>
+                        </td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+            } catch (e) {
+                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-red-500">Error al cargar solicitudes.</td></tr>';
+            }
+        }
+
+        window.abrirModalAprobar = function(id, paciente, whats, servicio) {
+            solicitusSeleccionada = { id, paciente, whats, servicio };
+            document.getElementById('modalAprobar').classList.remove('hidden');
+        };
+
+        window.confirmarAprobacionCita = async function(event) {
+            event.preventDefault();
+            const fechaHora = document.getElementById('inputFechaHora').value;
+            if(!fechaHora) return;
+
+            try {
+                // Guardar en la colección de citas confirmadas
+                await addDoc(collection(db, "citas"), {
+                    nombrePaciente: solicitusSeleccionada.paciente,
+                    whatsapp: solicitusSeleccionada.whats,
+                    servicio: solicitusSeleccionada.servicio,
+                    fechaHora: fechaHora,
+                    dentista: nombreDentistaActual,
+                    estado: "Confirmada"
+                });
+
+                // Borrar de solicitudes
+                await deleteDoc(doc(db, "solicitudes", solicitusSeleccionada.id));
+
+                document.getElementById('modalAprobar').classList.add('hidden');
+                alert("¡Cita aprobada y agregada a tu agenda exitosamente!");
+                cargarSolicitudes();
+            } catch(e) {
+                alert("Error al procesar la cita: " + e.message);
+            }
+        };
+
+        // Cargar Citas Confirmadas
+        async function cargarCitasConfirmadas() {
+            const tabla = document.getElementById('tablaCitasConfirmadas');
+            try {
+                const querySnapshot = await getDocs(collection(db, "citas"));
+                tabla.innerHTML = '';
+                if(querySnapshot.empty) {
+                    tabla.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No hay citas agendadas en la agenda.</td></tr>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const fila = document.createElement('tr');
+                    fila.className = "hover:bg-slate-50";
+                    fila.innerHTML = `
+                        <td class="px-4 py-3 text-sm font-bold text-track-navy">${data.fechaHora.replace('T', ' ')}</td>
+                        <td class="px-4 py-3 font-semibold text-slate-800">${data.nombrePaciente}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${data.whatsapp}</td>
+                        <td class="px-4 py-3 text-sm text-slate-600">${data.servicio}</td>
+                        <td class="px-4 py-3 text-right"><span class="bg-cyan-100 text-smile-cyan px-2.5 py-1 rounded-full text-xs font-bold">Confirmada</span></td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+            } catch(e) {
+                tabla.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-500">Error al cargar la agenda.</td></tr>';
+            }
+        }
+
+        // Cargar perfil propio y compresor de imágenes
         window.comprimirYConvertirImagen = function(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
-
             const lector = new FileReader();
             lector.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-
-                    // Definir un tamaño máximo ideal para perfiles (ej. 300x300 píxeles)
-                    const MAX_WIDTH = 300;
-                    const MAX_HEIGHT = 300;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Comprimir a formato JPEG con calidad 0.7 (reduce drásticamente el peso a pocos KB)
+                    const MAX = 300;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                    else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
                     document.getElementById('inputFotoBase64').value = dataUrl;
                     document.getElementById('previewFoto').src = dataUrl;
                     document.getElementById('previewFoto').classList.remove('hidden');
@@ -192,8 +354,8 @@
             const div = document.createElement('div');
             div.className = "flex gap-3 items-center item-servicio";
             div.innerHTML = `
-                <input type="text" placeholder="Nombre del procedimiento (Ej. Limpieza)" value="${nombre}" class="input-nombre-serv flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
-                <input type="text" placeholder="Precio (Ej. $850)" value="${precio}" class="input-precio-serv w-32 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
+                <input type="text" placeholder="Nombre del procedimiento" value="${nombre}" class="input-nombre-serv flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none text-sm" required>
+                <input type="text" placeholder="Precio (Ej. $850)" value="${precio}" class="input-precio-serv w-32 px-4 py-2 border border-slate-300 rounded-lg outline-none text-sm" required>
                 <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
             `;
             contenedor.appendChild(div);
@@ -205,13 +367,12 @@
                 if (!querySnapshot.empty) {
                     const docPerfil = querySnapshot.docs[0];
                     const datos = docPerfil.data();
-                    const id = docPerfil.id;
-
-                    document.getElementById('inputIdFirebase').value = id;
+                    document.getElementById('inputIdFirebase').value = docPerfil.id;
                     document.getElementById('inputNombre').value = (datos.nombre || '').replace(/^Dr\.\s*|Dra\.\s*/i, '');
                     document.getElementById('inputEspecialidad').value = datos.especialidad || '';
                     document.getElementById('inputCorreo').value = datos.correo || '';
                     document.getElementById('inputPassword').value = datos.password || '';
+                    nombreDentistaActual = datos.nombre || "Especialista";
                     
                     if (datos.foto) {
                         document.getElementById('inputFotoBase64').value = datos.foto;
@@ -219,7 +380,6 @@
                         document.getElementById('previewFoto').classList.remove('hidden');
                         document.getElementById('previewIcon').classList.add('hidden');
                     }
-
                     document.getElementById('sidebarNombre').innerText = datos.nombre || 'Especialista';
                     document.getElementById('sidebarAvatar').innerText = (datos.nombre || 'DR').substring(0, 2).toUpperCase();
 
@@ -231,52 +391,35 @@
                         agregarCampoServicio();
                     }
                 }
-            } catch (error) {
-                console.error("Error al cargar perfil:", error);
-            }
+            } catch (error) { console.error(error); }
         }
-
         cargarMiPerfil();
 
         window.guardarMiPerfil = async function(event) {
             event.preventDefault();
-            const btnSubmit = document.getElementById('btnSubmit');
-            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando cambios...';
-            btnSubmit.disabled = true;
-
             let nombreIngresado = document.getElementById('inputNombre').value.trim();
             if (!nombreIngresado.toLowerCase().startsWith('dr.') && !nombreIngresado.toLowerCase().startsWith('dra.')) {
                 nombreIngresado = "Dr. " + nombreIngresado;
             }
-
             const serviciosArray = [];
             document.querySelectorAll('.item-servicio').forEach(item => {
-                const nombreServ = item.querySelector('.input-nombre-serv').value;
-                const precioServ = item.querySelector('.input-precio-serv').value;
-                if (nombreServ && precioServ) {
-                    serviciosArray.push({ nombre: nombreServ, precio: precioServ });
-                }
+                const n = item.querySelector('.input-nombre-serv').value;
+                const p = item.querySelector('.input-precio-serv').value;
+                if (n && p) serviciosArray.push({ nombre: n, precio: p });
             });
 
-            const idFirebase = document.getElementById('inputIdFirebase').value;
-            const datosActualizados = {
-                nombre: nombreIngresado,
-                especialidad: document.getElementById('inputEspecialidad').value,
-                correo: document.getElementById('inputCorreo').value,
-                password: document.getElementById('inputPassword').value,
-                foto: document.getElementById('inputFotoBase64').value,
-                servicios: serviciosArray
-            };
-
             try {
-                await updateDoc(doc(db, "dentistas", idFirebase), datosActualizados);
-                alert("¡Tus cambios y tu foto se han guardado correctamente!");
+                await updateDoc(doc(db, "dentistas", document.getElementById('inputIdFirebase').value), {
+                    nombre: nombreIngresado,
+                    especialidad: document.getElementById('inputEspecialidad').value,
+                    correo: document.getElementById('inputCorreo').value,
+                    password: document.getElementById('inputPassword').value,
+                    foto: document.getElementById('inputFotoBase64').value,
+                    servicios: serviciosArray
+                });
+                alert("¡Perfil actualizado con éxito!");
                 location.reload();
-            } catch (error) {
-                alert("Error al guardar: " + error.message);
-                btnSubmit.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios en mi Perfil';
-                btnSubmit.disabled = false;
-            }
+            } catch (e) { alert("Error: " + e.message); }
         };
     </script>
 </body>
