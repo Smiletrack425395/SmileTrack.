@@ -11,12 +11,20 @@
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
         .text-track-navy { color: #1b365d; }
-        .dia-calendario { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Transición ultra fluida para la tarjeta flotante */
+        .card-detalle {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+        }
+        .dia-calendario:hover .card-detalle {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
 
-    <!-- MENÚ LATERAL -->
     <aside class="w-64 bg-track-navy text-white flex flex-col shadow-xl z-20">
         <div class="h-20 flex items-center justify-center border-b border-slate-700 px-6">
             <i class="fa-solid fa-tooth text-[#26bad4] text-2xl mr-3"></i>
@@ -48,7 +56,6 @@
         </div>
     </aside>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 flex flex-col overflow-y-auto">
         <header class="h-20 bg-white shadow-sm flex items-center justify-between px-8 z-10 sticky top-0">
             <h1 id="tituloSeccion" class="text-2xl font-bold text-track-navy">Configuración de mi Perfil</h1>
@@ -56,7 +63,6 @@
 
         <div class="p-8 max-w-6xl mx-auto w-full">
             
-            <!-- VISTA 1: MI PERFIL -->
             <div id="vista-perfil" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
                 <form id="formMiPerfil" onsubmit="guardarMiPerfil(event)">
                     <input type="hidden" id="inputIdFirebase">
@@ -117,7 +123,6 @@
                 </form>
             </div>
 
-            <!-- VISTA 2: SOLICITUDES -->
             <div id="vista-solicitudes" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 hidden">
                 <h3 class="text-lg font-bold text-track-navy mb-4">Solicitudes Pendientes de Pacientes</h3>
                 <div class="overflow-x-auto">
@@ -137,7 +142,6 @@
                 </div>
             </div>
 
-            <!-- VISTA 3: CALENDARIO DE CITAS -->
             <div id="vista-citas" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h3 id="mesAnioTitulo" class="text-xl font-bold text-track-navy">Calendario de Citas</h3>
@@ -147,21 +151,17 @@
                     </div>
                 </div>
 
-                <!-- Cabecera de Días de la Semana -->
-                <div class="grid grid-cols-7 gap-4 text-center font-bold text-slate-400 text-sm mb-4">
+                <div class="grid grid-cols-7 gap-3 text-center font-bold text-slate-400 text-sm mb-3">
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
 
-                <!-- Cuadrícula con gran espacio -->
-                <div id="gridCalendario" class="grid grid-cols-7 gap-4 py-8">
-                    <!-- Los días se inyectarán con JS -->
-                </div>
+                <div id="gridCalendario" class="grid grid-cols-7 gap-3">
+                    </div>
             </div>
 
         </div>
     </main>
 
-    <!-- MODAL APROBAR / REASIGNAR FECHA -->
     <div id="modalAprobar" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h3 id="modalTituloFecha" class="text-xl font-bold text-track-navy mb-4">Asignar Fecha y Hora de Cita</h3>
@@ -182,7 +182,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -369,7 +368,7 @@
 
             for (let i = 0; i < primerDiaIndex; i++) {
                 const divVacio = document.createElement('div');
-                divVacio.className = "h-36 bg-slate-50/40 rounded-2xl border border-slate-100 opacity-40";
+                divVacio.className = "h-32 bg-slate-50/40 rounded-2xl border border-slate-100 opacity-40";
                 grid.appendChild(divVacio);
             }
 
@@ -379,15 +378,16 @@
                 const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
 
                 const celda = document.createElement('div');
-                celda.className = `dia-calendario h-36 bg-white rounded-2xl border p-4 flex flex-col justify-between relative group hover:w-[320px] hover:h-[380px] hover:absolute hover:z-50 hover:shadow-2xl hover:bg-track-navy hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-md' : 'border-slate-200'}`;
+                // Celda fija estable: nunca cambia de tamaño ni de posición para evitar el parpadeo
+                celda.className = `dia-calendario h-32 bg-white rounded-2xl border p-3 flex flex-col justify-between relative group ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-sm' : 'border-slate-200'}`;
                 
                 let htmlCitasPreview = '';
                 if (citasDelDia.length > 0) {
-                    htmlCitasPreview = `<div class="mt-2 space-y-1">`;
+                    htmlCitasPreview = `<div class="mt-1 space-y-1 overflow-hidden">`;
                     citasDelDia.forEach(c => {
                         const hora = c.fechaHora.split('T')[1] || '';
                         htmlCitasPreview += `
-                            <div class="bg-cyan-50 group-hover:bg-slate-800 text-track-navy group-hover:text-white rounded-md px-2 py-1 text-xs font-bold truncate transition-colors">
+                            <div class="bg-cyan-50 text-track-navy rounded px-1.5 py-0.5 text-[11px] font-bold truncate">
                                 🕒 ${hora} - ${c.nombrePaciente}
                             </div>
                         `;
@@ -397,40 +397,40 @@
 
                 celda.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-base font-extrabold ${esHoy ? 'bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm shadow' : 'text-slate-700 group-hover:text-white'}">${dia}</span>
-                        ${esHoy ? '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">HOY</span>' : ''}
-                        ${citasDelDia.length > 0 ? `<span class="bg-[#26bad4] text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">${citasDelDia.length} cita(s)</span>` : ''}
+                        <span class="text-sm font-extrabold ${esHoy ? 'bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs' : 'text-slate-700'}">${dia}</span>
+                        ${esHoy ? '<span class="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">HOY</span>' : ''}
+                        ${citasDelDia.length > 0 ? `<span class="bg-[#26bad4] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">${citasDelDia.length} cita(s)</span>` : ''}
                     </div>
                     ${htmlCitasPreview}
                 `;
 
+                // Tarjeta flotante independiente (Tooltip flotante amplio) que aparece suavemente al poner el mouse encima sin afectar la cuadrícula
                 if (citasDelDia.length > 0) {
-                    const expandido = document.createElement('div');
-                    expandido.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-10 shadow-2xl";
+                    const tooltip = document.createElement('div');
+                    tooltip.className = "card-detalle absolute left-0 top-0 translate-y-[-10%] w-80 bg-track-navy text-white p-4 rounded-2xl opacity-0 z-50 shadow-2xl border border-slate-700";
                     
                     let detalleHtml = `
-                        <div class="h-full flex flex-col">
-                            <p class="text-xs font-extrabold text-[#26bad4] mb-3 border-b border-slate-700 pb-2">${dia} de ${nombresMeses[mes]} (${citasDelDia.length} citas):</p>
-                            <div class="space-y-2.5 overflow-y-auto pr-1 flex-1">
+                        <p class="text-xs font-extrabold text-[#26bad4] mb-2 border-b border-slate-700 pb-1">${dia} de ${nombresMeses[mes]} (${citasDelDia.length} citas):</p>
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
                     `;
                     
                     citasDelDia.forEach(c => {
                         const hora = c.fechaHora.split('T')[1] || '';
                         detalleHtml += `
-                            <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-sm">
+                            <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
                                 <p class="text-xs font-bold text-white">${c.nombrePaciente}</p>
-                                <p class="text-[11px] text-slate-300 mt-0.5">🕒 ${hora} | 🦷 ${c.servicio}</p>
+                                <p class="text-[11px] text-slate-300">🕒 ${hora} | 🦷 ${c.servicio}</p>
                                 <p class="text-[11px] text-slate-300">📱 ${c.whatsapp}</p>
-                                <div class="mt-2.5 flex gap-2 justify-end">
-                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow transition-colors">Reasignar</button>
-                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow transition-colors">Cancelar</button>
+                                <div class="mt-2 flex gap-1.5 justify-end">
+                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Reasignar</button>
+                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow">Cancelar</button>
                                 </div>
                             </div>
                         `;
                     });
-                    detalleHtml += `</div></div>`;
-                    expandido.innerHTML = detalleHtml;
-                    celda.appendChild(expandido);
+                    detalleHtml += `</div>`;
+                    tooltip.innerHTML = detalleHtml;
+                    celda.appendChild(tooltip);
                 }
 
                 grid.appendChild(celda);
@@ -475,7 +475,6 @@
             contenedor.appendChild(div);
         };
 
-        // CARGAR PERFIL BASADO EN EL CORREO ACTIVO DE LA SESIÓN
         async function cargarMiPerfil() {
             try {
                 const correoActivo = localStorage.getItem("smiletrack_correo");
@@ -486,14 +485,12 @@
 
                 querySnapshot.forEach((docSnap) => {
                     const datos = docSnap.data();
-                    // Si el correo coincide con el usuario que inició sesión
                     if (correoActivo && datos.correo === correoActivo) {
                         perfilEncontrado = datos;
                         idEncontrado = docSnap.id;
                     }
                 });
 
-                // Si por alguna razón no se halló por correo, tomamos el primero como respaldo
                 if (!perfilEncontrado && !querySnapshot.empty) {
                     const primerDoc = querySnapshot.docs[0];
                     perfilEncontrado = primerDoc.data();
