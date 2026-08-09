@@ -103,10 +103,10 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FIREBASE -->
+    <!-- SCRIPT DE FIREBASE CORREGIDO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDocs, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
@@ -143,10 +143,10 @@
                     label.className = "flex justify-between items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors";
                     label.innerHTML = `
                         <div class="flex items-center gap-3">
-                            <input type="radio" name="servicio" class="w-5 h-5 accent-[#26bad4]" onclick="seleccionarServicio('${s.nombre} - ${s.precio}')">
+                            <input type="radio" name="servicio" class="w-5 h-5 accent-[#26bad4]" onclick="seleccionarServicio('${s.nombre} - $${s.precio}')">
                             <span class="font-semibold text-slate-700">${s.nombre}</span>
                         </div>
-                        <span class="text-smile-cyan font-bold text-sm">${s.precio}</span>
+                        <span class="text-smile-cyan font-bold text-sm">$${s.precio}</span>
                     `;
                     contenedor.appendChild(label);
                 });
@@ -163,7 +163,6 @@
             document.getElementById('bookingForm').scrollIntoView({ behavior: 'smooth' });
         };
 
-        // Enviar solicitud de cita a Firebase
         window.enviarSolicitudCita = async function(event) {
             event.preventDefault();
             const btn = document.getElementById('btnEnviarCita');
@@ -200,6 +199,12 @@
             try {
                 const querySnapshot = await getDocs(collection(db, "dentistas"));
                 contenedor.innerHTML = '';
+                
+                if(querySnapshot.empty) {
+                    contenedor.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">No hay especialistas registrados.</div>';
+                    return;
+                }
+
                 querySnapshot.forEach((doc) => {
                     const datos = doc.data();
                     let imagenHTML = datos.foto ? `<img src="${datos.foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-track-navy flex items-center justify-center text-white font-bold text-xl">DR</div>`;
@@ -217,7 +222,10 @@
                     `;
                     contenedor.appendChild(tarjeta);
                 });
-            } catch(e) { contenedor.innerHTML = '<p class="text-red-500 text-center">Error al cargar especialistas.</p>'; }
+            } catch(e) { 
+                console.error(e);
+                contenedor.innerHTML = '<p class="text-red-500 text-center col-span-full">Error al cargar especialistas.</p>'; 
+            }
         }
         cargarCatalogo();
     </script>
