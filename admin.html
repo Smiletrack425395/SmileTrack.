@@ -11,8 +11,11 @@
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
         .text-track-navy { color: #1b365d; }
-        /* Transición fluida para el efecto de expansión del calendario */
-        .dia-calendario { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Transición suave para el zoom del cuadro */
+        .dia-calendario { 
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease; 
+            transform-origin: center center;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -149,12 +152,12 @@
                 </div>
 
                 <!-- Cabecera de Días de la Semana -->
-                <div class="grid grid-cols-7 gap-3 text-center font-bold text-slate-400 text-sm mb-3">
+                <div class="grid grid-cols-7 gap-4 text-center font-bold text-slate-400 text-sm mb-4">
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
 
-                <!-- Cuadrícula del Calendario -->
-                <div id="gridCalendario" class="grid grid-cols-7 gap-3">
+                <!-- Cuadrícula del Calendario (Espaciado amplio para permitir el zoom sin amontonarse) -->
+                <div id="gridCalendario" class="grid grid-cols-7 gap-4 py-6">
                     <!-- Los días se inyectarán con JS -->
                 </div>
             </div>
@@ -334,7 +337,7 @@
             }
         };
 
-        // --- LÓGICA DEL CALENDARIO VISUAL EXPANDIBLE ---
+        // --- LÓGICA DEL CALENDARIO CON ZOOM DUPLICADO AL HACER HOVER ---
         async function cargarCitasParaCalendario() {
             try {
                 const querySnapshot = await getDocs(collection(db, "citas"));
@@ -368,74 +371,75 @@
             const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate();
             const hoy = new Date();
 
-            // Rellenar espacios vacíos antes del primer día del mes
+            // Espacios vacíos antes del primer día del mes
             for (let i = 0; i < primerDiaIndex; i++) {
                 const divVacio = document.createElement('div');
-                divVacio.className = "h-32 bg-slate-50/40 rounded-xl border border-slate-100 opacity-40";
+                divVacio.className = "h-36 bg-slate-50/40 rounded-2xl border border-slate-100 opacity-40";
                 grid.appendChild(divVacio);
             }
 
-            // Rellenar días del mes
+            // Días del mes
             for (let dia = 1; dia <= ultimoDiaMes; dia++) {
                 const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 const citasDelDia = listaCitasGlobal.filter(c => c.fechaHora && c.fechaHora.startsWith(fechaStr));
                 const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
 
                 const celda = document.createElement('div');
-                // Al poner el mouse encima (group-hover), el cuadro se expande y flota con una sombra grande por encima de los demás sin requerir scroll
-                celda.className = `dia-calendario h-32 bg-white rounded-xl border p-3 flex flex-col justify-between relative group hover:scale-105 hover:z-40 hover:shadow-2xl hover:bg-slate-900 hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10' : 'border-slate-200'}`;
                 
-                let htmlCitasIndicadores = '';
+                // EFECTO ZOOM DUPLICADO: Al pasar el mouse, el cuadro crece al doble de tamaño en todas direcciones (scale-125 o scale-150) flotando por encima con sombra profunda
+                celda.className = `dia-calendario h-36 bg-white rounded-2xl border p-4 flex flex-col justify-between relative group hover:scale-125 hover:z-50 hover:shadow-2xl hover:bg-track-navy hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-md' : 'border-slate-200'}`;
+                
+                let htmlCitasPreview = '';
                 if (citasDelDia.length > 0) {
-                    htmlCitasIndicadores = `<div class="mt-1 space-y-1.5">`;
+                    htmlCitasPreview = `<div class="mt-2 space-y-1">`;
                     citasDelDia.forEach(c => {
                         const hora = c.fechaHora.split('T')[1] || '';
-                        htmlCitasIndicadores += `
-                            <div class="bg-cyan-50 group-hover:bg-slate-800 border border-cyan-100 group-hover:border-slate-700 text-track-navy group-hover:text-white rounded px-2 py-1 text-xs font-bold flex justify-between items-center transition-colors">
-                                <span class="truncate">🕒 ${hora} - ${c.nombrePaciente}</span>
+                        htmlCitasPreview += `
+                            <div class="bg-cyan-50 group-hover:bg-slate-800 text-track-navy group-hover:text-white rounded-md px-2 py-1 text-xs font-bold truncate transition-colors">
+                                🕒 ${hora} - ${c.nombrePaciente}
                             </div>
                         `;
                     });
-                    htmlCitasIndicadores += `</div>`;
+                    htmlCitasPreview += `</div>`;
                 }
 
                 celda.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold ${esHoy ? 'bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs' : 'text-slate-700 group-hover:text-slate-300'}">${dia}</span>
-                        ${esHoy ? '<span class="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">HOY</span>' : ''}
-                        ${citasDelDia.length > 0 ? `<span class="bg-[#26bad4] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${citasDelDia.length} cita(s)</span>` : ''}
+                        <span class="text-base font-extrabold ${esHoy ? 'bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm shadow' : 'text-slate-700 group-hover:text-white'}">${dia}</span>
+                        ${esHoy ? '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">HOY</span>' : ''}
+                        ${citasDelDia.length > 0 ? `<span class="bg-[#26bad4] text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">${citasDelDia.length} cita(s)</span>` : ''}
                     </div>
-                    ${htmlCitasIndicadores}
+                    ${htmlCitasPreview}
                 `;
 
-                // Tarjeta flotante expandida completa al poner el mouse encima
+                // Contenido expandido que aparece dentro del mismo cuadro al duplicar su tamaño en el hover
                 if (citasDelDia.length > 0) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-40 shadow-2xl";
+                    const expandido = document.createElement('div');
+                    expandido.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto";
                     
                     let detalleHtml = `
                         <div>
-                            <p class="text-xs font-bold text-[#26bad4] mb-2 border-b border-slate-700 pb-1">${dia} de ${nombresMeses[mes]} (${citasDelDia.length} citas):</p>
-                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            <p class="text-xs font-extrabold text-[#26bad4] mb-2 border-b border-slate-700 pb-1">${dia} de ${nombresMeses[mes]}:</p>
+                            <div class="space-y-2">
                     `;
                     
                     citasDelDia.forEach(c => {
                         const hora = c.fechaHora.split('T')[1] || '';
                         detalleHtml += `
-                            <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow-sm">
+                            <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
                                 <p class="text-xs font-bold text-white">${c.nombrePaciente}</p>
-                                <p class="text-[11px] text-slate-300 mt-0.5">🕒 ${hora} | 🦷 ${c.servicio}</p>
+                                <p class="text-[11px] text-slate-300">🕒 ${hora} | 🦷 ${c.servicio}</p>
                                 <p class="text-[11px] text-slate-300">📱 ${c.whatsapp}</p>
                                 <div class="mt-2 flex gap-1.5 justify-end">
-                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow transition-colors">Reasignar</button>
-                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow transition-colors">Cancelar</button>
+                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Reasignar</button>
+                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Cancelar</button>
                                 </div>
                             </div>
                         `;
                     });
                     detalleHtml += `</div></div>`;
-                    tooltip.innerHTML = detalleHtml;
-                    celda.appendChild(tooltip);
+                    expandido.innerHTML = detalleHtml;
+                    celda.appendChild(expandido);
                 }
 
                 grid.appendChild(celda);
@@ -536,6 +540,7 @@
                     foto: document.getElementById('inputFotoBase64').value,
                     servicios: serviciosArray
                 });
+                // Actualizar sesión si cambió el nombre
                 alert("¡Perfil actualizado con éxito!");
                 location.reload();
             } catch (e) { alert("Error: " + e.message); }
