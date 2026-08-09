@@ -41,7 +41,6 @@
                     <p class="font-bold text-white truncate max-w-[140px]" id="sidebarNombre">Especialista</p>
                 </div>
             </div>
-            <!-- Botón de Cerrar Sesión destruye la llave y redirige -->
             <button onclick="cerrarSesion()" class="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors text-sm">
                 <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
             </button>
@@ -78,11 +77,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
-                            <input type="text" id="inputNombre" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
+                            <input type="text" id="inputNombre" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Especialidad</label>
-                            <select id="inputEspecialidad" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white focus:ring-2 focus:ring-[#26bad4]">
+                            <select id="inputEspecialidad" required class="w-full px-4 py-2 border rounded-lg outline-none bg-white focus:ring-2 focus:ring-[#26bad4]">
                                 <option value="" disabled selected>Selecciona una especialidad...</option>
                                 <option value="Odontología General">Odontología General</option>
                                 <option value="Ortodoncia">Ortodoncia</option>
@@ -92,11 +91,11 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
-                            <input type="email" id="inputCorreo" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-slate-50">
+                            <input type="email" id="inputCorreo" required class="w-full px-4 py-2 border rounded-lg outline-none bg-slate-50">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Mi Contraseña</label>
-                            <input type="text" id="inputPassword" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
+                            <input type="text" id="inputPassword" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
                         </div>
                     </div>
 
@@ -148,7 +147,7 @@
                                 <th class="px-4 py-3 font-medium">Paciente</th>
                                 <th class="px-4 py-3 font-medium">WhatsApp</th>
                                 <th class="px-4 py-3 font-medium">Procedimiento</th>
-                                <th class="px-4 py-3 font-medium text-right">Estado</th>
+                                <th class="px-4 py-3 font-medium text-right">Opciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaCitasConfirmadas" class="divide-y divide-slate-100">
@@ -161,21 +160,22 @@
         </div>
     </main>
 
-    <!-- MODAL APROBAR -->
+    <!-- MODAL APROBAR / REASIGNAR FECHA -->
     <div id="modalAprobar" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-track-navy mb-4">Asignar Fecha y Hora de Cita</h3>
-            <form id="formAprobarCita" onsubmit="confirmarAprobacionCita(event)">
-                <input type="hidden" id="solicitudIdHidden">
+            <h3 id="modalTituloFecha" class="text-xl font-bold text-track-navy mb-4">Asignar Fecha y Hora de Cita</h3>
+            <form id="formAprobarCita" onsubmit="guardarFechaCita(event)">
+                <input type="hidden" id="modoAccionCita"> <!-- 'aprobar' o 'reasignar' -->
+                <input type="hidden" id="idCitaOidSolicitud">
                 <div class="space-y-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Fecha y Hora asignada</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Fecha y Hora</label>
                         <input type="datetime-local" id="inputFechaHora" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
                     </div>
                 </div>
                 <div class="flex justify-end gap-3">
                     <button type="button" onclick="document.getElementById('modalAprobar').classList.add('hidden')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-smile-cyan text-white font-bold rounded-lg shadow-md hover:bg-[#1fa1b8]">Aprobar y Agendar</button>
+                    <button type="submit" id="btnModalFecha" class="px-5 py-2 bg-smile-cyan text-white font-bold rounded-lg shadow-md hover:bg-[#1fa1b8]">Aprobar y Agendar</button>
                 </div>
             </form>
         </div>
@@ -185,7 +185,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // --- CANDADO DE SEGURIDAD (VALIDAR SESIÓN) ---
         if (localStorage.getItem("smiletrack_sesion") !== "activa") {
             alert("Acceso denegado. Debes iniciar sesión para entrar al panel.");
             window.location.href = "index.html";
@@ -269,29 +268,64 @@
 
         window.abrirModalAprobar = function(id, paciente, whats, servicio) {
             solicitusSeleccionada = { id, paciente, whats, servicio };
+            document.getElementById('modoAccionCita').value = 'aprobar';
+            document.getElementById('modalTituloFecha').innerText = "Asignar Fecha y Hora de Cita";
+            document.getElementById('btnModalFecha').innerText = "Aprobar y Agendar";
+            document.getElementById('inputFechaHora').value = '';
             document.getElementById('modalAprobar').classList.remove('hidden');
         };
 
-        window.confirmarAprobacionCita = async function(event) {
+        window.abrirModalReasignar = function(idCita, fechaActual) {
+            document.getElementById('modoAccionCita').value = 'reasignar';
+            document.getElementById('idCitaOidSolicitud').value = idCita;
+            document.getElementById('modalTituloFecha').innerText = "Reasignar Fecha de Cita";
+            document.getElementById('btnModalFecha').innerText = "Guardar Nueva Fecha";
+            document.getElementById('inputFechaHora').value = fechaActual || '';
+            document.getElementById('modalAprobar').classList.remove('hidden');
+        };
+
+        window.guardarFechaCita = async function(event) {
             event.preventDefault();
             const fechaHora = document.getElementById('inputFechaHora').value;
+            const modo = document.getElementById('modoAccionCita').value;
             if(!fechaHora) return;
 
             try {
-                await addDoc(collection(db, "citas"), {
-                    nombrePaciente: solicitusSeleccionada.paciente,
-                    whatsapp: solicitusSeleccionada.whats,
-                    servicio: solicitusSeleccionada.servicio,
-                    fechaHora: fechaHora,
-                    dentista: nombreDentistaActual,
-                    estado: "Confirmada"
-                });
-                await deleteDoc(doc(db, "solicitudes", solicitusSeleccionada.id));
+                if(modo === 'aprobar') {
+                    await addDoc(collection(db, "citas"), {
+                        nombrePaciente: solicitusSeleccionada.paciente,
+                        whatsapp: solicitusSeleccionada.whats,
+                        servicio: solicitusSeleccionada.servicio,
+                        fechaHora: fechaHora,
+                        dentista: nombreDentistaActual,
+                        estado: "Confirmada"
+                    });
+                    await deleteDoc(doc(db, "solicitudes", solicitusSeleccionada.id));
+                    alert("¡Cita aprobada y agregada a tu agenda!");
+                    cargarSolicitudes();
+                } else if(modo === 'reasignar') {
+                    const idCita = document.getElementById('idCitaOidSolicitud').value;
+                    await updateDoc(doc(db, "citas", idCita), {
+                        fechaHora: fechaHora
+                    });
+                    alert("¡Cita reasignada con éxito!");
+                    cargarCitasConfirmadas();
+                }
                 document.getElementById('modalAprobar').classList.add('hidden');
-                alert("¡Cita aprobada y agregada a tu agenda!");
-                cargarSolicitudes();
             } catch(e) {
                 alert("Error: " + e.message);
+            }
+        };
+
+        window.cancelarCita = async function(idCita) {
+            if(confirm("¿Estás seguro de que deseas cancelar esta cita? Se eliminará de la agenda.")) {
+                try {
+                    await deleteDoc(doc(db, "citas", idCita));
+                    alert("Cita cancelada correctamente.");
+                    cargarCitasConfirmadas();
+                } catch(e) {
+                    alert("Error al cancelar: " + e.message);
+                }
             }
         };
 
@@ -306,14 +340,19 @@
                 }
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
+                    const id = docSnap.id;
+                    const fechaTexto = data.fechaHora || '';
                     const fila = document.createElement('tr');
                     fila.className = "hover:bg-slate-50";
                     fila.innerHTML = `
-                        <td class="px-4 py-3 text-sm font-bold text-track-navy">${data.fechaHora.replace('T', ' ')}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-track-navy">${fechaTexto.replace('T', ' ')}</td>
                         <td class="px-4 py-3 font-semibold text-slate-800">${data.nombrePaciente}</td>
                         <td class="px-4 py-3 text-sm text-slate-600">${data.whatsapp}</td>
                         <td class="px-4 py-3 text-sm text-slate-600">${data.servicio}</td>
-                        <td class="px-4 py-3 text-right"><span class="bg-cyan-100 text-smile-cyan px-2.5 py-1 rounded-full text-xs font-bold">Confirmada</span></td>
+                        <td class="px-4 py-3 text-right space-x-2">
+                            <button onclick="abrirModalReasignar('${id}', '${fechaTexto}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-md text-xs font-bold transition-colors" title="Reasignar Fecha"><i class="fa-solid fa-clock"></i> Reasignar</button>
+                            <button onclick="cancelarCita('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-bold transition-colors" title="Cancelar Cita"><i class="fa-solid fa-ban"></i> Cancelar</button>
+                        </td>
                     `;
                     tabla.appendChild(fila);
                 });
