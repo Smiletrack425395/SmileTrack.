@@ -104,7 +104,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -130,7 +129,7 @@
             if(modalID === 'dentistModal') document.getElementById('bookingForm').classList.add('hidden');
         };
 
-        // Función de inicio de sesión validada contra Firebase y almacenamiento de sesión
+        // INICIAR SESIÓN Y GUARDAR EL CORREO DEL USUARIO ACTIVO
         window.iniciarSesion = async function(event) {
             event.preventDefault();
             const correoIngresado = document.getElementById('loginCorreo').value.trim();
@@ -149,6 +148,7 @@
 
                 if (usuarioEncontrado) {
                     localStorage.setItem("smiletrack_sesion", "activa");
+                    localStorage.setItem("smiletrack_correo", correoIngresado); // Guardamos su correo exacto
                     window.location.href = "admin.html";
                 } else {
                     alert("Correo o contraseña incorrectos. Verifica tus datos.");
