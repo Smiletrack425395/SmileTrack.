@@ -11,6 +11,8 @@
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
         .text-track-navy { color: #1b365d; }
+        /* Transición suave para el hover del calendario */
+        .dia-calendario { transition: all 0.2s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -136,24 +138,24 @@
                 </div>
             </div>
 
-            <!-- VISTA 3: CITAS -->
+            <!-- VISTA 3: CALENDARIO DE CITAS -->
             <div id="vista-citas" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 hidden">
-                <h3 class="text-lg font-bold text-track-navy mb-4">Agenda de Citas Confirmadas</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                                <th class="px-4 py-3 font-medium">Fecha y Hora</th>
-                                <th class="px-4 py-3 font-medium">Paciente</th>
-                                <th class="px-4 py-3 font-medium">WhatsApp</th>
-                                <th class="px-4 py-3 font-medium">Procedimiento</th>
-                                <th class="px-4 py-3 font-medium text-right">Opciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaCitasConfirmadas" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="text-center py-6 text-slate-400">Cargando agenda...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="mesAnioTitulo" class="text-xl font-bold text-track-navy">Calendario de Citas</h3>
+                    <div class="flex gap-2">
+                        <button onclick="cambiarMes(-1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm transition-colors"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="cambiarMes(1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm transition-colors"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Cabecera de Días de la Semana -->
+                <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-400 text-sm mb-2">
+                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+                </div>
+
+                <!-- Cuadrícula del Calendario -->
+                <div id="gridCalendario" class="grid grid-cols-7 gap-2">
+                    <!-- Los días se inyectarán con JS -->
                 </div>
             </div>
 
@@ -165,7 +167,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h3 id="modalTituloFecha" class="text-xl font-bold text-track-navy mb-4">Asignar Fecha y Hora de Cita</h3>
             <form id="formAprobarCita" onsubmit="guardarFechaCita(event)">
-                <input type="hidden" id="modoAccionCita"> <!-- 'aprobar' o 'reasignar' -->
+                <input type="hidden" id="modoAccionCita">
                 <input type="hidden" id="idCitaOidSolicitud">
                 <div class="space-y-4 mb-6">
                     <div>
@@ -181,6 +183,7 @@
         </div>
     </div>
 
+    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -210,6 +213,8 @@
 
         let solicitusSeleccionada = null;
         let nombreDentistaActual = "Especialista";
+        let fechaActualCalendario = new Date();
+        let listaCitasGlobal = [];
 
         window.cambiarVista = function(vista) {
             document.getElementById('vista-perfil').classList.add('hidden');
@@ -233,7 +238,7 @@
                 document.getElementById('vista-citas').classList.remove('hidden');
                 document.getElementById('nav-citas').className = "flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md";
                 document.getElementById('tituloSeccion').innerText = "Agenda de Citas";
-                cargarCitasConfirmadas();
+                cargarCitasParaCalendario();
             }
         };
 
@@ -309,7 +314,7 @@
                         fechaHora: fechaHora
                     });
                     alert("¡Cita reasignada con éxito!");
-                    cargarCitasConfirmadas();
+                    cargarCitasParaCalendario();
                 }
                 document.getElementById('modalAprobar').classList.add('hidden');
             } catch(e) {
@@ -322,42 +327,115 @@
                 try {
                     await deleteDoc(doc(db, "citas", idCita));
                     alert("Cita cancelada correctamente.");
-                    cargarCitasConfirmadas();
+                    cargarCitasParaCalendario();
                 } catch(e) {
                     alert("Error al cancelar: " + e.message);
                 }
             }
         };
 
-        async function cargarCitasConfirmadas() {
-            const tabla = document.getElementById('tablaCitasConfirmadas');
+        // --- LÓGICA DEL CALENDARIO VISUAL ---
+        async function cargarCitasParaCalendario() {
             try {
                 const querySnapshot = await getDocs(collection(db, "citas"));
-                tabla.innerHTML = '';
-                if(querySnapshot.empty) {
-                    tabla.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No hay citas en la agenda.</td></tr>';
-                    return;
-                }
+                listaCitasGlobal = [];
                 querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const id = docSnap.id;
-                    const fechaTexto = data.fechaHora || '';
-                    const fila = document.createElement('tr');
-                    fila.className = "hover:bg-slate-50";
-                    fila.innerHTML = `
-                        <td class="px-4 py-3 text-sm font-bold text-track-navy">${fechaTexto.replace('T', ' ')}</td>
-                        <td class="px-4 py-3 font-semibold text-slate-800">${data.nombrePaciente}</td>
-                        <td class="px-4 py-3 text-sm text-slate-600">${data.whatsapp}</td>
-                        <td class="px-4 py-3 text-sm text-slate-600">${data.servicio}</td>
-                        <td class="px-4 py-3 text-right space-x-2">
-                            <button onclick="abrirModalReasignar('${id}', '${fechaTexto}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-md text-xs font-bold transition-colors" title="Reasignar Fecha"><i class="fa-solid fa-clock"></i> Reasignar</button>
-                            <button onclick="cancelarCita('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-bold transition-colors" title="Cancelar Cita"><i class="fa-solid fa-ban"></i> Cancelar</button>
-                        </td>
-                    `;
-                    tabla.appendChild(fila);
+                    listaCitasGlobal.push({ id: docSnap.id, ...docSnap.data() });
                 });
+                renderizarCalendario();
             } catch(e) {
-                tabla.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-500">Error al cargar la agenda.</td></tr>';
+                console.error(e);
+            }
+        }
+
+        window.cambiarMes = function(delta) {
+            fechaActualCalendario.setMonth(fechaActualCalendario.getMonth() + delta);
+            renderizarCalendario();
+        };
+
+        function renderizarCalendario() {
+            const grid = document.getElementById('gridCalendario');
+            const tituloMes = document.getElementById('mesAnioTitulo');
+            grid.innerHTML = '';
+
+            const anio = fechaActualCalendario.getFullYear();
+            const mes = fechaActualCalendario.getMonth();
+
+            const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            tituloMes.innerText = `${nombresMeses[mes]} ${anio}`;
+
+            const primerDiaIndex = new Date(anio, mes, 1).getDay();
+            const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate();
+            const hoy = new Date();
+
+            // Rellenar espacios vacíos antes del primer día del mes
+            for (let i = 0; i < primerDiaIndex; i++) {
+                const divVacio = document.createElement('div');
+                divVacio.className = "h-28 bg-slate-50/50 rounded-xl border border-slate-100 opacity-40";
+                grid.appendChild(divVacio);
+            }
+
+            // Rellenar días del mes
+            for (let dia = 1; dia <= ultimoDiaMes; dia++) {
+                const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                
+                // Buscar si hay citas este día
+                const citasDelDia = listaCitasGlobal.filter(c => c.fechaHora && c.fechaHora.startsWith(fechaStr));
+                
+                const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
+
+                const celda = document.createElement('div');
+                celda.className = `dia-calendario h-28 bg-white rounded-xl border p-2 flex flex-col justify-between relative group hover:shadow-lg hover:border-[#26bad4] overflow-hidden ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10' : 'border-slate-200'}`;
+                
+                let htmlCitasIndicadores = '';
+                if (citasDelDia.length > 0) {
+                    htmlCitasIndicadores = `<div class="mt-1 space-y-1 overflow-y-auto max-h-16 pr-1">`;
+                    citasDelDia.forEach(c => {
+                        const hora = c.fechaHora.split('T')[1] || '';
+                        htmlCitasIndicadores += `
+                            <div class="bg-cyan-50 border border-cyan-100 text-track-navy rounded px-1.5 py-0.5 text-[10px] font-bold flex justify-between items-center">
+                                <span class="truncate">${hora} - ${c.nombrePaciente}</span>
+                            </div>
+                        `;
+                    });
+                    htmlCitasIndicadores += `</div>`;
+                }
+
+                celda.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold ${esHoy ? 'bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs' : 'text-slate-700'}">${dia}</span>
+                        ${esHoy ? '<span class="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">HOY</span>' : ''}
+                        ${citasDelDia.length > 0 ? `<span class="bg-[#26bad4] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">${citasDelDia.length}</span>` : ''}
+                    </div>
+                    ${htmlCitasIndicadores}
+                `;
+
+                // Tarjeta Flotante Expandida al poner el mouse encima (Hover Tooltip interactivo)
+                if (citasDelDia.length > 0) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = "absolute inset-0 bg-track-navy text-white p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-30 shadow-xl overflow-y-auto";
+                    
+                    let detalleHtml = `<p class="text-xs font-bold text-[#26bad4] mb-1">Citas del ${dia} de ${nombresMeses[mes]}:</p><div class="space-y-2">`;
+                    citasDelDia.forEach(c => {
+                        const hora = c.fechaHora.split('T')[1] || '';
+                        detalleHtml += `
+                            <div class="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                                <p class="text-xs font-bold text-white">${c.nombrePaciente}</p>
+                                <p class="text-[10px] text-slate-300">🕒 ${hora} | 🦷 ${c.servicio}</p>
+                                <p class="text-[10px] text-slate-300">📱 ${c.whatsapp}</p>
+                                <div class="mt-1 flex gap-1 justify-end">
+                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">Reasignar</button>
+                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">Cancelar</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    detalleHtml += `</div>`;
+                    tooltip.innerHTML = detalleHtml;
+                    celda.appendChild(tooltip);
+                }
+
+                grid.appendChild(celda);
             }
         }
 
