@@ -11,10 +11,7 @@
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
         .text-track-navy { color: #1b365d; }
-        /* Transición fluida para la expansión lateral y vertical del cuadro */
-        .dia-calendario { 
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
+        .dia-calendario { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -155,7 +152,7 @@
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
 
-                <!-- Cuadrícula con gran espacio para permitir el despliegue masivo hacia los costados -->
+                <!-- Cuadrícula con gran espacio -->
                 <div id="gridCalendario" class="grid grid-cols-7 gap-4 py-8">
                     <!-- Los días se inyectarán con JS -->
                 </div>
@@ -197,6 +194,7 @@
 
         window.cerrarSesion = function() {
             localStorage.removeItem("smiletrack_sesion");
+            localStorage.removeItem("smiletrack_correo");
             window.location.href = "index.html";
         };
 
@@ -308,7 +306,7 @@
                         estado: "Confirmada"
                     });
                     await deleteDoc(doc(db, "solicitudes", solicitusSeleccionada.id));
-                    alert("¡Cita aprobada y agregada à tu agenda!");
+                    alert("¡Cita aprobada y agregada a tu agenda!");
                     cargarSolicitudes();
                 } else if(modo === 'reasignar') {
                     const idCita = document.getElementById('idCitaOidSolicitud').value;
@@ -336,7 +334,6 @@
             }
         };
 
-        // --- LÓGICA DEL CALENDARIO CON EXPANSIÓN MASIVA HACIA LOS COSTADOS Y SCROLL VERTICAL ---
         async function cargarCitasParaCalendario() {
             try {
                 const querySnapshot = await getDocs(collection(db, "citas"));
@@ -382,8 +379,6 @@
                 const esHoy = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === dia;
 
                 const celda = document.createElement('div');
-                
-                // EXPANSIÓN MASIVA: Al poner el mouse, se expande masivamente hacia los costados (w-[320px] y h-auto) flotando por encima con sombra profunda y alta prioridad (z-50)
                 celda.className = `dia-calendario h-36 bg-white rounded-2xl border p-4 flex flex-col justify-between relative group hover:w-[320px] hover:h-[380px] hover:absolute hover:z-50 hover:shadow-2xl hover:bg-track-navy hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-md' : 'border-slate-200'}`;
                 
                 let htmlCitasPreview = '';
@@ -409,7 +404,6 @@
                     ${htmlCitasPreview}
                 `;
 
-                // Contenido expandido con scroll vertical deslizante para ver toda la información a lo ancho y largo
                 if (citasDelDia.length > 0) {
                     const expandido = document.createElement('div');
                     expandido.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-10 shadow-2xl";
@@ -481,37 +475,60 @@
             contenedor.appendChild(div);
         };
 
+        // CARGAR PERFIL BASADO EN EL CORREO ACTIVO DE LA SESIÓN
         async function cargarMiPerfil() {
             try {
+                const correoActivo = localStorage.getItem("smiletrack_correo");
                 const querySnapshot = await getDocs(collection(db, "dentistas"));
-                if (!querySnapshot.empty) {
-                    const docPerfil = querySnapshot.docs[0];
-                    const datos = docPerfil.data();
-                    document.getElementById('inputIdFirebase').value = docPerfil.id;
-                    document.getElementById('inputNombre').value = (datos.nombre || '').replace(/^Dr\.\s*|Dra\.\s*/i, '');
-                    document.getElementById('inputEspecialidad').value = datos.especialidad || '';
-                    document.getElementById('inputCorreo').value = datos.correo || '';
-                    document.getElementById('inputPassword').value = datos.password || '';
-                    nombreDentistaActual = datos.nombre || "Especialista";
+                
+                let perfilEncontrado = null;
+                let idEncontrado = null;
+
+                querySnapshot.forEach((docSnap) => {
+                    const datos = docSnap.data();
+                    // Si el correo coincide con el usuario que inició sesión
+                    if (correoActivo && datos.correo === correoActivo) {
+                        perfilEncontrado = datos;
+                        idEncontrado = docSnap.id;
+                    }
+                });
+
+                // Si por alguna razón no se halló por correo, tomamos el primero como respaldo
+                if (!perfilEncontrado && !querySnapshot.empty) {
+                    const primerDoc = querySnapshot.docs[0];
+                    perfilEncontrado = primerDoc.data();
+                    idEncontrado = primerDoc.id;
+                }
+
+                if (perfilEncontrado) {
+                    document.getElementById('inputIdFirebase').value = idEncontrado;
+                    document.getElementById('inputNombre').value = (perfilEncontrado.nombre || '').replace(/^Dr\.\s*|Dra\.\s*/i, '');
+                    document.getElementById('inputEspecialidad').value = perfilEncontrado.especialidad || '';
+                    document.getElementById('inputCorreo').value = perfilEncontrado.correo || '';
+                    document.getElementById('inputPassword').value = perfilEncontrado.password || '';
+                    nombreDentistaActual = perfilEncontrado.nombre || "Especialista";
                     
-                    if (datos.foto) {
-                        document.getElementById('inputFotoBase64').value = datos.foto;
-                        document.getElementById('previewFoto').src = datos.foto;
-                        document.getElementById('previewFoto'].classList.remove('hidden');
+                    if (perfilEncontrado.foto && perfilEncontrado.foto.trim() !== "") {
+                        document.getElementById('inputFotoBase64').value = perfilEncontrado.foto;
+                        document.getElementById('previewFoto').src = perfilEncontrado.foto;
+                        document.getElementById('previewFoto').classList.remove('hidden');
                         document.getElementById('previewIcon').classList.add('hidden');
                     }
-                    document.getElementById('sidebarNombre').innerText = datos.nombre || 'Especialista';
-                    document.getElementById('sidebarAvatar').innerText = (datos.nombre || 'DR').substring(0, 2).toUpperCase();
+                    
+                    document.getElementById('sidebarNombre').innerText = perfilEncontrado.nombre || 'Especialista';
+                    document.getElementById('sidebarAvatar').innerText = (perfilEncontrado.nombre || 'DR').substring(0, 2).toUpperCase();
 
                     const contenedorServicios = document.getElementById('contenedorServiciosDinamicos');
                     contenedorServicios.innerHTML = '';
-                    if (datos.servicios && datos.servicios.length > 0) {
-                        datos.servicios.forEach(s => agregarCampoServicio(s.nombre, s.precio));
+                    if (perfilEncontrado.servicios && perfilEncontrado.servicios.length > 0) {
+                        perfilEncontrado.servicios.forEach(s => agregarCampoServicio(s.nombre, s.precio));
                     } else {
                         agregarCampoServicio();
                     }
                 }
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                console.error("Error al cargar perfil:", error); 
+            }
         }
         cargarMiPerfil();
 
