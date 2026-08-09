@@ -11,10 +11,9 @@
         .text-smile-cyan { color: #26bad4; }
         .bg-track-navy { background-color: #1b365d; }
         .text-track-navy { color: #1b365d; }
-        /* Transición suave para el zoom del cuadro */
+        /* Transición fluida para la expansión lateral y vertical del cuadro */
         .dia-calendario { 
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease; 
-            transform-origin: center center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
         }
     </style>
 </head>
@@ -156,8 +155,8 @@
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
 
-                <!-- Cuadrícula del Calendario (Espaciado amplio para permitir el zoom sin amontonarse) -->
-                <div id="gridCalendario" class="grid grid-cols-7 gap-4 py-6">
+                <!-- Cuadrícula con gran espacio para permitir el despliegue masivo hacia los costados -->
+                <div id="gridCalendario" class="grid grid-cols-7 gap-4 py-8">
                     <!-- Los días se inyectarán con JS -->
                 </div>
             </div>
@@ -309,7 +308,7 @@
                         estado: "Confirmada"
                     });
                     await deleteDoc(doc(db, "solicitudes", solicitusSeleccionada.id));
-                    alert("¡Cita aprobada y agregada a tu agenda!");
+                    alert("¡Cita aprobada y agregada à tu agenda!");
                     cargarSolicitudes();
                 } else if(modo === 'reasignar') {
                     const idCita = document.getElementById('idCitaOidSolicitud').value;
@@ -337,7 +336,7 @@
             }
         };
 
-        // --- LÓGICA DEL CALENDARIO CON ZOOM DUPLICADO AL HACER HOVER ---
+        // --- LÓGICA DEL CALENDARIO CON EXPANSIÓN MASIVA HACIA LOS COSTADOS Y SCROLL VERTICAL ---
         async function cargarCitasParaCalendario() {
             try {
                 const querySnapshot = await getDocs(collection(db, "citas"));
@@ -371,14 +370,12 @@
             const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate();
             const hoy = new Date();
 
-            // Espacios vacíos antes del primer día del mes
             for (let i = 0; i < primerDiaIndex; i++) {
                 const divVacio = document.createElement('div');
                 divVacio.className = "h-36 bg-slate-50/40 rounded-2xl border border-slate-100 opacity-40";
                 grid.appendChild(divVacio);
             }
 
-            // Días del mes
             for (let dia = 1; dia <= ultimoDiaMes; dia++) {
                 const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 const citasDelDia = listaCitasGlobal.filter(c => c.fechaHora && c.fechaHora.startsWith(fechaStr));
@@ -386,8 +383,8 @@
 
                 const celda = document.createElement('div');
                 
-                // EFECTO ZOOM DUPLICADO: Al pasar el mouse, el cuadro crece al doble de tamaño en todas direcciones (scale-125 o scale-150) flotando por encima con sombra profunda
-                celda.className = `dia-calendario h-36 bg-white rounded-2xl border p-4 flex flex-col justify-between relative group hover:scale-125 hover:z-50 hover:shadow-2xl hover:bg-track-navy hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-md' : 'border-slate-200'}`;
+                // EXPANSIÓN MASIVA: Al poner el mouse, se expande masivamente hacia los costados (w-[320px] y h-auto) flotando por encima con sombra profunda y alta prioridad (z-50)
+                celda.className = `dia-calendario h-36 bg-white rounded-2xl border p-4 flex flex-col justify-between relative group hover:w-[320px] hover:h-[380px] hover:absolute hover:z-50 hover:shadow-2xl hover:bg-track-navy hover:text-white ${esHoy ? 'border-2 border-emerald-500 bg-emerald-50/10 shadow-md' : 'border-slate-200'}`;
                 
                 let htmlCitasPreview = '';
                 if (citasDelDia.length > 0) {
@@ -412,27 +409,27 @@
                     ${htmlCitasPreview}
                 `;
 
-                // Contenido expandido que aparece dentro del mismo cuadro al duplicar su tamaño en el hover
+                // Contenido expandido con scroll vertical deslizante para ver toda la información a lo ancho y largo
                 if (citasDelDia.length > 0) {
                     const expandido = document.createElement('div');
-                    expandido.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-10 shadow-2xl overflow-y-auto";
+                    expandido.className = "absolute inset-0 bg-track-navy text-white p-4 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between z-10 shadow-2xl";
                     
                     let detalleHtml = `
-                        <div>
-                            <p class="text-xs font-extrabold text-[#26bad4] mb-2 border-b border-slate-700 pb-1">${dia} de ${nombresMeses[mes]}:</p>
-                            <div class="space-y-2">
+                        <div class="h-full flex flex-col">
+                            <p class="text-xs font-extrabold text-[#26bad4] mb-3 border-b border-slate-700 pb-2">${dia} de ${nombresMeses[mes]} (${citasDelDia.length} citas):</p>
+                            <div class="space-y-2.5 overflow-y-auto pr-1 flex-1">
                     `;
                     
                     citasDelDia.forEach(c => {
                         const hora = c.fechaHora.split('T')[1] || '';
                         detalleHtml += `
-                            <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
+                            <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-sm">
                                 <p class="text-xs font-bold text-white">${c.nombrePaciente}</p>
-                                <p class="text-[11px] text-slate-300">🕒 ${hora} | 🦷 ${c.servicio}</p>
+                                <p class="text-[11px] text-slate-300 mt-0.5">🕒 ${hora} | 🦷 ${c.servicio}</p>
                                 <p class="text-[11px] text-slate-300">📱 ${c.whatsapp}</p>
-                                <div class="mt-2 flex gap-1.5 justify-end">
-                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Reasignar</button>
-                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Cancelar</button>
+                                <div class="mt-2.5 flex gap-2 justify-end">
+                                    <button onclick="abrirModalReasignar('${c.id}', '${c.fechaHora}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow transition-colors">Reasignar</button>
+                                    <button onclick="cancelarCita('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-bold shadow transition-colors">Cancelar</button>
                                 </div>
                             </div>
                         `;
@@ -500,7 +497,7 @@
                     if (datos.foto) {
                         document.getElementById('inputFotoBase64').value = datos.foto;
                         document.getElementById('previewFoto').src = datos.foto;
-                        document.getElementById('previewFoto').classList.remove('hidden');
+                        document.getElementById('previewFoto'].classList.remove('hidden');
                         document.getElementById('previewIcon').classList.add('hidden');
                     }
                     document.getElementById('sidebarNombre').innerText = datos.nombre || 'Especialista';
@@ -540,7 +537,6 @@
                     foto: document.getElementById('inputFotoBase64').value,
                     servicios: serviciosArray
                 });
-                // Actualizar sesión si cambió el nombre
                 alert("¡Perfil actualizado con éxito!");
                 location.reload();
             } catch (e) { alert("Error: " + e.message); }
