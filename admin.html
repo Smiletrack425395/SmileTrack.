@@ -24,13 +24,14 @@
         </div>
         
         <nav class="flex-1 px-4 py-6 space-y-2">
-            <!-- Módulo Activo -->
             <a href="#" class="flex items-center gap-3 px-4 py-3 bg-[#26bad4] text-white rounded-lg font-medium transition-colors shadow-md">
                 <i class="fa-solid fa-user-doctor w-5"></i> Gestión de Dentistas
             </a>
-            <!-- Módulo Pendiente para futuro desarrollo -->
-            <a href="#" onclick="alert('Módulo en construcción')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
-                <i class="fa-solid fa-calendar-check w-5"></i> Citas Generales
+            <a href="#" onclick="alert('Apartado de Solicitudes de Citas en desarrollo')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-clock-rotate-left w-5"></i> Solicitudes de Citas
+            </a>
+            <a href="#" onclick="alert('Módulo de Citas en construcción')" class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-calendar-check w-5"></i> Citas
             </a>
         </nav>
 
@@ -69,7 +70,6 @@
                             </tr>
                         </thead>
                         <tbody id="cuerpoTabla" class="divide-y divide-slate-100">
-                            <!-- Los dentistas se cargarán aquí automáticamente desde Firebase -->
                             <tr><td colspan="4" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando datos desde la nube...</td></tr>
                         </tbody>
                     </table>
@@ -89,14 +89,13 @@
             </div>
             
             <form id="formUsuario" onsubmit="guardarUsuario(event)" class="p-6">
-                <!-- Campo oculto para saber si estamos editando -->
                 <input type="hidden" id="inputIdFirebase">
                 
                 <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Información y Acceso</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
-                        <input type="text" id="inputNombre" required placeholder="Ej. Dr. Roberto Gómez" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo (Ej. Yatziri Leal)</label>
+                        <input type="text" id="inputNombre" required placeholder="Nombre sin prefijo" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Especialidad</label>
@@ -116,6 +115,22 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña de Acceso</label>
                         <input type="text" id="inputPassword" required placeholder="Asigna una contraseña" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
                     </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Fotografía de Perfil (URL de imagen o link)</label>
+                        <input type="text" id="inputFoto" placeholder="https://ejemplo.com/foto.jpg (o deja en blanco)" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none">
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE SERVICIOS Y PRECIOS DINÁMICOS -->
+                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                    <h3 class="text-sm font-bold text-smile-cyan uppercase tracking-wider">Servicios y Costos Ofrecidos</h3>
+                    <button type="button" onclick="agregarCampoServicio()" class="bg-cyan-50 text-smile-cyan hover:bg-cyan-100 px-3 py-1 rounded-md text-xs font-bold transition-colors">
+                        <i class="fa-solid fa-plus"></i> Añadir Servicio
+                    </button>
+                </div>
+                
+                <div id="contenedorServiciosDinamicos" class="space-y-3 mb-6">
+                    <!-- Los campos de servicios se cargarán aquí -->
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
@@ -133,7 +148,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // === TU CONFIGURACIÓN EXACTA DE FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
             authDomain: "smiletrack-53116.firebaseapp.com",
@@ -147,10 +161,25 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- LÓGICA DE INTERFAZ ---
+        // --- GESTIÓN DE CAMPOS DINÁMICOS DE SERVICIOS ---
+        window.agregarCampoServicio = function(nombre = '', precio = '') {
+            const contenedor = document.getElementById('contenedorServiciosDinamicos');
+            const div = document.createElement('div');
+            div.className = "flex gap-3 items-center item-servicio";
+            div.innerHTML = `
+                <input type="text" placeholder="Nombre del procedimiento" value="${nombre}" class="input-nombre-serv flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
+                <input type="text" placeholder="Precio (Ej. $850)" value="${precio}" class="input-precio-serv w-32 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none text-sm" required>
+                <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+            `;
+            contenedor.appendChild(div);
+        };
+
         window.abrirModalCrear = function() {
             document.getElementById('formUsuario').reset();
             document.getElementById('inputIdFirebase').value = '';
+            document.getElementById('contenedorServiciosDinamicos').innerHTML = '';
+            // Agregar un servicio por defecto
+            agregarCampoServicio("Limpieza Dental", "$800");
             document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-[#26bad4]"></i> Registrar Nuevo Dentista';
             document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-check"></i> Registrar Usuario';
             document.getElementById('userModal').classList.remove('hidden');
@@ -160,12 +189,12 @@
             document.getElementById('userModal').classList.add('hidden');
         };
 
-        // --- LECTURA DE DATOS (CARGAR AL INICIAR) ---
+        // --- CARGAR TABLA ---
         async function cargarTabla() {
             const tabla = document.getElementById('cuerpoTabla');
             try {
                 const querySnapshot = await getDocs(collection(db, "dentistas"));
-                tabla.innerHTML = ''; // Limpiar mensaje de carga
+                tabla.innerHTML = ''; 
                 
                 if(querySnapshot.empty) {
                     tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">No hay dentistas registrados aún.</td></tr>';
@@ -187,7 +216,7 @@
                         <td class="px-6 py-4 text-slate-600">${datos.especialidad}</td>
                         <td class="px-6 py-4 text-sm text-slate-500 font-mono">${datos.password || 'No asignada'}</td>
                         <td class="px-6 py-4 text-right space-x-2">
-                            <button onclick="abrirModalEditar('${id}', '${datos.nombre}', '${datos.correo}', '${datos.especialidad}', '${datos.password}')" class="text-slate-400 hover:text-smile-cyan transition-colors" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick='abrirModalEditar("${id}", ${JSON.stringify(datos.nombre)}, "${datos.correo}", "${datos.especialidad}", "${datos.password || ''}", "${datos.foto || ''}", ${JSON.stringify(datos.servicios || [])})' class="text-slate-400 hover:text-smile-cyan transition-colors" title="Editar"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="eliminarFila(this, '${id}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Eliminar"><i class="fa-solid fa-ban"></i></button>
                         </td>
                     `;
@@ -195,27 +224,35 @@
                 });
             } catch (error) {
                 console.error(error);
-                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos de Firebase. Revisa los permisos o tu conexión.</td></tr>';
+                tabla.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">Error al cargar datos.</td></tr>';
             }
         }
 
-        // Llamar a la función al cargar la página
         cargarTabla();
 
         // --- EDITAR USUARIO ---
-        window.abrirModalEditar = function(id, nombre, correo, especialidad, password) {
+        window.abrirModalEditar = function(id, nombre, correo, especialidad, password, foto, servicios) {
             document.getElementById('inputIdFirebase').value = id;
-            document.getElementById('inputNombre').value = nombre;
+            document.getElementById('inputNombre').value = nombre.replace(/^Dr\.\s*|Dra\.\s*/i, ''); // Limpiar prefijo para editar limpio
             document.getElementById('inputCorreo').value = correo;
             document.getElementById('inputEspecialidad').value = especialidad;
             document.getElementById('inputPassword').value = password !== 'undefined' ? password : '';
+            document.getElementById('inputFoto').value = foto !== 'undefined' ? foto : '';
+            
+            // Cargar servicios
+            const contenedorServicios = document.getElementById('contenedorServiciosDinamicos');
+            contenedorServicios.innerHTML = '';
+            if (servicios && servicios.length > 0) {
+                servicios.forEach(s => agregarCampoServicio(s.nombre, s.precio));
+            } else {
+                agregarCampoServicio();
+            }
             
             document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen text-[#26bad4]"></i> Editar Dentista';
             document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
             document.getElementById('userModal').classList.remove('hidden');
         };
 
-        // --- ELIMINAR USUARIO ---
         window.eliminarFila = async function(boton, idFirebase) {
             if(confirm("¿Estás seguro de que deseas eliminar a este usuario de la base de datos?")) {
                 try {
@@ -227,7 +264,7 @@
             }
         };
 
-        // --- GUARDAR O ACTUALIZAR USUARIO ---
+        // --- GUARDAR O ACTUALIZAR ---
         window.guardarUsuario = async function(event) {
             event.preventDefault();
 
@@ -236,30 +273,46 @@
             btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btnSubmit.disabled = true;
 
+            // Asegurar formato de nombre con "Dr. / Dra."
+            let nombreIngresado = document.getElementById('inputNombre').value.trim();
+            if (!nombreIngresado.toLowerCase().startsWith('dr.') && !nombreIngresado.toLowerCase().startsWith('dra.')) {
+                nombreIngresado = "Dr. " + nombreIngresado;
+            }
+
+            // Recopilar servicios dinámicos
+            const serviciosArray = [];
+            document.querySelectorAll('.item-servicio').forEach(item => {
+                const nombreServicio = item.querySelector('.input-nombre-serv').value;
+                const precioServicio = item.querySelector('.input-precio-serv').value;
+                if (nombreServicio && precioServicio) {
+                    serviciosArray.push({ nombre: nombreServicio, precio: precioServicio });
+                }
+            });
+
             const idFirebase = document.getElementById('inputIdFirebase').value;
             const datos = {
-                nombre: document.getElementById('inputNombre').value,
+                nombre: nombreIngresado,
                 correo: document.getElementById('inputCorreo').value,
                 especialidad: document.getElementById('inputEspecialidad').value,
-                password: document.getElementById('inputPassword').value
+                password: document.getElementById('inputPassword').value,
+                foto: document.getElementById('inputFoto').value,
+                servicios: serviciosArray
             };
 
             try {
                 if (idFirebase) {
-                    // MODO EDICIÓN
                     await updateDoc(doc(db, "dentistas", idFirebase), datos);
+                    alert("¡Datos actualizados exitosamente!");
                 } else {
-                    // MODO CREACIÓN
                     datos.estado = "Activo";
                     datos.fechaRegistro = new Date();
                     await addDoc(collection(db, "dentistas"), datos);
+                    alert("¡Dentista registrado exitosamente!");
                 }
 
                 cerrarModal();
                 btnSubmit.innerHTML = textoOriginal;
                 btnSubmit.disabled = false;
-                
-                // Recargamos la tabla para ver el usuario nuevo/editado
                 cargarTabla();
 
             } catch (error) {
