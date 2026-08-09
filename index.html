@@ -66,16 +66,16 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Tu nombre completo</label>
-                                <input type="text" id="pacienteNombre" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white">
+                                <input type="text" id="pacienteNombre" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white focus:ring-2 focus:ring-[#26bad4]">
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp</label>
-                                    <input type="tel" id="pacienteWhats" required placeholder="10 dígitos" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white">
+                                    <input type="tel" id="pacienteWhats" required placeholder="10 dígitos" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white focus:ring-2 focus:ring-[#26bad4]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Correo electrónico <span class="text-xs text-slate-400">(Opcional)</span></label>
-                                    <input type="email" id="pacienteCorreo" placeholder="tucorreo@email.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white">
+                                    <input type="email" id="pacienteCorreo" placeholder="tucorreo@email.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white focus:ring-2 focus:ring-[#26bad4]">
                                 </div>
                             </div>
                             <button type="submit" id="btnEnviarCita" class="w-full bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold py-3 px-4 rounded-lg transition-colors mt-4 shadow-md">
@@ -93,17 +93,18 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6">
             <div class="flex justify-end"><button onclick="toggleModal('loginModal')" class="text-slate-400 text-2xl">&times;</button></div>
             <div class="text-center mb-6"><h2 class="text-2xl font-bold text-track-navy">Acceso a Personal</h2></div>
-            <form onsubmit="event.preventDefault(); window.location.href = 'admin.html';">
+            
+            <form id="formLogin" onsubmit="iniciarSesion(event)">
                 <div class="space-y-4">
-                    <input type="email" required placeholder="Correo" class="w-full px-4 py-2 border rounded-lg">
-                    <input type="password" required placeholder="Contraseña" class="w-full px-4 py-2 border rounded-lg">
-                    <button type="submit" class="w-full bg-track-navy text-white font-bold py-3 rounded-lg">Ingresar</button>
+                    <input type="email" id="loginCorreo" required placeholder="Correo" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
+                    <input type="password" id="loginPassword" required placeholder="Contraseña" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-[#26bad4]">
+                    <button type="submit" class="w-full bg-track-navy text-white font-bold py-3 rounded-lg hover:bg-[#122543] transition-colors">Ingresar al Sistema</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- SCRIPT DE FIREBASE CORREGIDO -->
+    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -127,6 +128,34 @@
         window.toggleModal = function(modalID) {
             document.getElementById(modalID).classList.toggle('hidden');
             if(modalID === 'dentistModal') document.getElementById('bookingForm').classList.add('hidden');
+        };
+
+        // Función de inicio de sesión validada contra Firebase y almacenamiento de sesión
+        window.iniciarSesion = async function(event) {
+            event.preventDefault();
+            const correoIngresado = document.getElementById('loginCorreo').value.trim();
+            const passIngresada = document.getElementById('loginPassword').value.trim();
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "dentistas"));
+                let usuarioEncontrado = false;
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.correo === correoIngresado && data.password === passIngresada) {
+                        usuarioEncontrado = true;
+                    }
+                });
+
+                if (usuarioEncontrado) {
+                    localStorage.setItem("smiletrack_sesion", "activa");
+                    window.location.href = "admin.html";
+                } else {
+                    alert("Correo o contraseña incorrectos. Verifica tus datos.");
+                }
+            } catch (e) {
+                alert("Error al validar el acceso: " + e.message);
+            }
         };
 
         window.openDentistModal = function(nombre, especialidad, servicios) {
@@ -207,17 +236,29 @@
 
                 querySnapshot.forEach((doc) => {
                     const datos = doc.data();
-                    let imagenHTML = datos.foto ? `<img src="${datos.foto}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-track-navy flex items-center justify-center text-white font-bold text-xl">DR</div>`;
+                    let imagenHTML = '';
+                    
+                    if (datos.foto && datos.foto.trim() !== "") {
+                        imagenHTML = `<img src="${datos.foto}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">`;
+                    } else {
+                        const iniciales = (datos.nombre || 'DR').replace(/^Dr\.\s*|Dra\.\s*/i, '').substring(0, 2).toUpperCase();
+                        imagenHTML = `
+                            <div class="w-full h-full bg-gradient-to-br from-slate-800 to-track-navy flex flex-col items-center justify-center text-white">
+                                <i class="fa-solid fa-user-doctor text-4xl text-[#26bad4] mb-2"></i>
+                                <span class="font-bold text-lg tracking-wider">${iniciales}</span>
+                            </div>
+                        `;
+                    }
                     
                     const tarjeta = document.createElement('div');
-                    tarjeta.className = "bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer";
+                    tarjeta.className = "bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group";
                     tarjeta.onclick = () => openDentistModal(datos.nombre, datos.especialidad, datos.servicios);
                     tarjeta.innerHTML = `
-                        <div class="h-48 bg-slate-200 overflow-hidden">${imagenHTML}</div>
+                        <div class="h-48 bg-slate-200 overflow-hidden relative">${imagenHTML}</div>
                         <div class="p-6 text-center">
                             <h3 class="text-xl font-bold text-track-navy">${datos.nombre}</h3>
                             <p class="text-smile-cyan font-medium mb-4">${datos.especialidad}</p>
-                            <span class="inline-block bg-cyan-50 text-smile-cyan rounded-full px-4 py-2 text-sm font-semibold">Ver servicios y agendar</span>
+                            <span class="inline-block bg-cyan-50 text-smile-cyan rounded-full px-4 py-2 text-sm font-semibold border border-cyan-100">Ver servicios y agendar</span>
                         </div>
                     `;
                     contenedor.appendChild(tarjeta);
