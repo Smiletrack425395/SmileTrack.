@@ -41,7 +41,6 @@
     <!-- CATÁLOGO DINÁMICO DE DENTISTAS -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div id="catalogoDentistas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Aquí se cargarán automáticamente los dentistas desde Firebase -->
             <div class="col-span-full text-center py-12 text-slate-400">
                 <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
                 <p>Cargando especialistas disponibles...</p>
@@ -49,7 +48,7 @@
         </div>
     </main>
 
-    <!-- MODAL: PERFIL DEL DENTISTA Y SERVICIOS -->
+    <!-- MODAL: PERFIL DEL DENTISTA Y SUS SERVICIOS -->
     <div id="dentistModal" class="modal hidden fixed inset-0 bg-slate-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex justify-between items-center z-10">
@@ -59,22 +58,16 @@
             
             <div class="p-6">
                 <p id="modalDentistSpec" class="text-smile-cyan font-medium mb-6">Especialidad</p>
-                <h3 class="text-lg font-bold mb-4 text-slate-700">Servicios Disponibles:</h3>
+                <h3 class="text-lg font-bold mb-4 text-slate-700">Selecciona un servicio:</h3>
                 
-                <!-- Lista de servicios del dentista -->
+                <!-- Lista dinámica de servicios del dentista -->
                 <div id="listaServiciosModal" class="space-y-3 mb-8">
-                    <label class="flex justify-between items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="radio" name="servicio" class="w-5 h-5 accent-[#26bad4]" onchange="showForm('$1,200 MXN')">
-                            <span class="font-semibold text-slate-700">Consulta y Valoración General</span>
-                        </div>
-                        <span class="text-slate-500 text-sm">$1,200 MXN</span>
-                    </label>
+                    <!-- Se inyectan con JS -->
                 </div>
 
-                <!-- Formulario para agendar -->
+                <!-- Formulario para agendar (Correo opcional) -->
                 <div id="bookingForm" class="hidden bg-cyan-50 p-6 rounded-xl border border-cyan-100">
-                    <form onsubmit="event.preventDefault(); alert('¡Solicitud enviada con éxito!'); toggleModal('dentistModal');">
+                    <form onsubmit="event.preventDefault(); alert('¡Solicitud de cita enviada con éxito!'); toggleModal('dentistModal');">
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Tu nombre completo</label>
@@ -82,12 +75,12 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp</label>
-                                    <input type="tel" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp (Obligatorio)</label>
+                                    <input type="tel" required placeholder="10 dígitos" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Correo electrónico</label>
-                                    <input type="email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Correo electrónico <span class="text-xs text-slate-400 font-normal">(Opcional)</span></label>
+                                    <input type="email" placeholder="tucorreo@email.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#26bad4] outline-none bg-white">
                                 </div>
                             </div>
                             <button type="submit" class="w-full bg-smile-cyan hover:bg-[#1fa1b8] text-white font-bold py-3 px-4 rounded-lg transition-colors mt-4 shadow-md">
@@ -132,12 +125,11 @@
         </div>
     </div>
 
-    <!-- CONEXIÓN A FIREBASE Y LÓGICA PÚBLICA -->
+    <!-- LÓGICA CON FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // === TU CONFIGURACIÓN EXACTA DE FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAzaA4eNHIF-azFNkOlulCURdbGHLaY9dw",
             authDomain: "smiletrack-53116.firebaseapp.com",
@@ -159,18 +151,40 @@
             }
         };
 
-        window.openDentistModal = function(nombre, especialidad) {
+        window.openDentistModal = function(nombre, especialidad, servicios) {
             document.getElementById('modalDentistName').innerText = nombre;
             document.getElementById('modalDentistSpec').innerText = especialidad;
+            
+            // Cargar los servicios reales del dentista en el modal
+            const contenedorServicios = document.getElementById('listaServiciosModal');
+            contenedorServicios.innerHTML = '';
+
+            if (servicios && servicios.length > 0) {
+                servicios.forEach(s => {
+                    const label = document.createElement('label');
+                    label.className = "flex justify-between items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors";
+                    label.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="servicio" class="w-5 h-5 accent-[#26bad4]" onchange="showForm()">
+                            <span class="font-semibold text-slate-700">${s.nombre}</span>
+                        </div>
+                        <span class="text-smile-cyan font-bold text-sm">${s.precio}</span>
+                    `;
+                    contenedorServicios.appendChild(label);
+                });
+            } else {
+                contenedorServicios.innerHTML = '<p class="text-sm text-slate-400">Este especialista aún no registra servicios.</p>';
+            }
+
+            document.getElementById('bookingForm').classList.add('hidden');
             toggleModal('dentistModal');
         };
 
-        window.showForm = function(precio) {
+        window.showForm = function() {
             document.getElementById('bookingForm').classList.remove('hidden');
             document.getElementById('bookingForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
 
-        // --- CARGAR DENTISTAS DESDE FIREBASE EN LA WEB PÚBLICA ---
         async function cargarCatalogoPublico() {
             const contenedor = document.getElementById('catalogoDentistas');
             try {
@@ -184,13 +198,13 @@
 
                 querySnapshot.forEach((doc) => {
                     const datos = doc.data();
-                    
-                    // Imagen predeterminada si no tiene foto cargada
-                    const fotoUrl = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80";
+                    const fotoUrl = (datos.foto && datos.foto.trim() !== "") ? datos.foto : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80";
 
                     const tarjeta = document.createElement('div');
                     tarjeta.className = "bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group";
-                    tarjeta.onclick = () => openDentistModal(datos.nombre, datos.especialidad);
+                    
+                    // Pasamos los servicios en formato JSON seguro
+                    tarjeta.onclick = () => openDentistModal(datos.nombre, datos.especialidad, datos.servicios);
                     
                     tarjeta.innerHTML = `
                         <div class="h-48 bg-slate-200 overflow-hidden">
